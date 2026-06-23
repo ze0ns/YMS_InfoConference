@@ -9,7 +9,6 @@
 import Foundation
 
 struct APIConfig {
-    // Приватный метод для загрузки словаря из вашего файла
     private static func loadPlistDict() -> [String: Any]? {
         guard let path = Bundle.main.path(forResource: "Config", ofType: "plist"),
               let dict = NSDictionary(contentsOfFile: path) as? [String: Any] else {

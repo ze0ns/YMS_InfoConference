@@ -59,8 +59,6 @@ class ConferenceViewModel: ObservableObject {
                     conferencePlanId: info.conferencePlanID,
                     conferenceSubject: info.conferenceSubject.subject,
                     startDateTimeStamp: Int(info.conferenceTimePattern.conferenceTime.startDateTimeStamp),
-                    // ВНИМАНИЕ: Вы переводили Double в String. Убедитесь, что ConfDataModel ожидает String,
-                    // иначе храните как Double. Оставляю как было в вашем коде:
                     endDateTimeStamp: String(info.conferenceTimePattern.conferenceTime.endDateTimeStamp),
                     startTime: info.conferenceTimePattern.conferenceTime.startTime,
                     endTime: info.conferenceTimePattern.conferenceTime.endTime,
@@ -90,12 +88,15 @@ class ConferenceViewModel: ObservableObject {
         }
     }
 
-    /// Внутренняя логика удаления с использованием FetchDescriptor (Правильно для SwiftData)
     private func clearDataInternal() throws {
         let descriptor = FetchDescriptor<ConfDataModel>()
         let existingItems = try modelContext.fetch(descriptor)
+        
         for item in existingItems {
             modelContext.delete(item)
         }
+        
+        // Убедитесь, что сохранение происходит правильно
+        try modelContext.save()
     }
 }
