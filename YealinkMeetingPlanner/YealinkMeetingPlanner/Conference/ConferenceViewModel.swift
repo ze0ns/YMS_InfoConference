@@ -8,7 +8,7 @@ import SwiftUI
 import Combine
 import SwiftData
 
-@MainActor // Гарантируем, что все обновления @Published происходят на главном потоке
+@MainActor
 class ConferenceViewModel: ObservableObject {
     @Published var confDataItems: [ConfDataModel] = []
     @Published var errorMessage: String? = nil
@@ -50,10 +50,7 @@ class ConferenceViewModel: ObservableObject {
             let confInfoList = schedulerInfo.data.data
             for info in confInfoList {
                 
-                // Безопасно обрабатываем JSONNull?. Если это не строка, ставим пустую строку.
-                // (В вашей модели plainEmailRemark имеет тип JSONNull?, что странно для ремарки,
-                // но если API возвращает строку, лучше привести её к String?)
-                let remark = (info.plainEmailRemark as? String) ?? ""
+                let remark = (info.plainEmailRemark)
                 
                 let confsInfo = ConfDataModel(
                     conferencePlanId: info.conferencePlanID,
@@ -78,7 +75,7 @@ class ConferenceViewModel: ObservableObject {
         }
     }
 
-    /// Публичный метод для очистки данных (если нужно вызвать снаружи)
+    /// Публичный метод для очистки данных
     func clearData() {
         do {
             try clearDataInternal()
@@ -95,8 +92,6 @@ class ConferenceViewModel: ObservableObject {
         for item in existingItems {
             modelContext.delete(item)
         }
-        
-        // Убедитесь, что сохранение происходит правильно
         try modelContext.save()
     }
 }
