@@ -26,6 +26,10 @@ struct ConferenceRoomScreen: View {
     
     // 1. Добавляем переменную состояния для управления открытием окна
     @State private var isSelectRoomPresented = false
+
+    // Настройки: сначала запрос пин-кода, затем сам экран настроек
+    @State private var isPinEntryPresented = false
+    @State private var isSettingsPresented = false
     
     private let scheduleConf: [String: Any] = [:]
     
@@ -75,8 +79,8 @@ struct ConferenceRoomScreen: View {
             .background(Color.BG)
             .overlay(alignment: .bottomTrailing) {
                 Button(action: {
-                    // 2. При нажатии меняем состояние на true, чтобы открыть окно
-                    isSelectRoomPresented = true
+                    // По нажатию на настройки сначала запрашиваем пин-код
+                    isPinEntryPresented = true
                 }) {
                     Image(systemName: "gearshape")
                         .font(.title2)
@@ -94,6 +98,16 @@ struct ConferenceRoomScreen: View {
                     SelectRoomView()
                         .modelContainer(container)
                 }
+            }
+            .sheet(isPresented: $isPinEntryPresented) {
+                PinEntryView {
+                    isPinEntryPresented = false
+                    isSettingsPresented = true
+                }
+            }
+            .sheet(isPresented: $isSettingsPresented) {
+                SettingsView()
+                    .modelContainer(container)
             }
         }
         .task {

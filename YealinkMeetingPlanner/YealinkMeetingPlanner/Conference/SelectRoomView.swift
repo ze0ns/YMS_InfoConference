@@ -31,32 +31,26 @@ let getRoom: [String: Any?] = [
 struct SelectRoomView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss // Для кнопки "Готово"
-    
-    // Читаем сохраненные комнаты из SwiftData. Сортируем по имени.
-    @Query(sort: \RoomModel.namePinyin) private var savedRooms: [RoomModel]
-    
-    // Подключаем глобальное состояние к View
-    @State private var globalState = GlobalAppState.shared
-    
-    var ymsapi = YmsApiResponce()
-    
+
+    @StateObject private var viewModel = SelectRoomViewModel()
+
     var body: some View {
         VStack {
             List {
-                ForEach(savedRooms) { room in
+                ForEach(viewModel.rooms) { room in
                     // Превращаем строку в кнопку для обработки нажатия
                     Button {
                         // СОХРАНЯЕМ ВЫБОР В ГЛОБАЛЬНУЮ ПЕРЕМЕННУЮ
-                        GlobalAppState.shared.selectedRoom = room
+                        viewModel.selectedRoom = room
                     } label: {
                         HStack {
                             Text(room.namePinyin)
                                 .foregroundColor(.primary) // Возвращаем стандартный цвет текста
-                            
+
                             Spacer()
-                            
-                            // Показываем галочку, если ID комнаты совпадает с сохраненной в глобальной переменной
-                            if GlobalAppState.shared.selectedRoom?.id == room.id {
+
+                            // Показываем галочку, если ID комнаты совпадает с выбранной
+                            if viewModel.selectedRoom?.id == room.id {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.accentColor)
                                     .fontWeight(.bold)
@@ -68,66 +62,31 @@ struct SelectRoomView: View {
                 }
             }
         }
-        
+        .overlay {
+            if viewModel.isLoading && viewModel.rooms.isEmpty {
+                ProgressView()
+            }
+        }
+
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity) // ← Обязательно!
         .background(Color(.systemBackground)) // ← Явный фон
-        
+
         .navigationTitle("Выбор комнаты")
         .toolbar {
             // Добавляем кнопку "Готово", чтобы пользователь мог вернуться назад после выбора
             ToolbarItem(placement: .confirmationAction) {
                 Button("Готово") {
-                    print(globalState)
                     dismiss()
                 }
-                .disabled(GlobalAppState.shared.selectedRoom == nil) // Активна только если что-то выбрано
+                .disabled(viewModel.selectedRoom == nil) // Активна только если что-то выбрано
             }
         }
         .task {
-            await fetchAndSaveRooms()
+            viewModel.configure(modelContext: modelContext)
+            await viewModel.fetchAndSaveRooms()
         }
-        
-    }
-    
-    // MARK: - Метод загрузки и сохранения
-    private func fetchAndSaveRooms() async {
-        do {
-            // 1. Получаем данные из API
-            let rooms = try await ymsapi.getInfo(funcURL: "api/open/v1/room/pagedList", json: getRoom)
-            let fetchedRoomsData = rooms.data.data
-            
-            // 2. Удаляем старые записи из базы
-            let descriptor = FetchDescriptor<RoomModel>()
-            let oldRooms = try modelContext.fetch(descriptor)
-            for oldRoom in oldRooms {
-                modelContext.delete(oldRoom)
-            }
-            
-            // 3. Сохраняем новые данные в SwiftData
-            for roomData in fetchedRoomsData {
-                // МАППИНГ: Здесь вы переводите свойства из DatumRoom в свойства RoomModel
-                let newRoom = RoomModel(
-                    id: roomData.id,
-                    namePinyin: roomData.namePinyin
-                )
-                
-                modelContext.insert(newRoom)
-            }
-            
-            // 4. Сохраняем контекст
-            try modelContext.save()
-            
-            // Опционально: Если ранее выбранная комната есть в новом списке, оставляем её выбранной
-            // Если её удалили из API, сбрасываем выбор
-            if let currentSelected = GlobalAppState.shared.selectedRoom,
-               !savedRooms.contains(where: { $0.id == currentSelected.id }) {
-                GlobalAppState.shared.selectedRoom = nil
-            }
-            
-        } catch {
-            print("Ошибка при загрузке или сохранении комнат: \(error)")
-        }
+
     }
 }
 

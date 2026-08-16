@@ -21,7 +21,8 @@ struct WeatherForecastView: View {
             }
         }
         .onAppear {
-            weatherViewModel.fetchWeather(latitude: 45.0328, longitude: 38.9769)
+            let city = SettingsStore.shared.selectedCity
+            weatherViewModel.fetchWeather(latitude: city.latitude, longitude: city.longitude)
         }
         .background(Color.bgColorScheduler)
     }
@@ -43,7 +44,8 @@ struct WeatherForecastView: View {
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
             Button("Повторить") {
-                weatherViewModel.fetchWeather(latitude: 45.0328, longitude: 38.9769)
+                let city = SettingsStore.shared.selectedCity
+                weatherViewModel.fetchWeather(latitude: city.latitude, longitude: city.longitude)
             }
             .foregroundColor(.blue)
         }
