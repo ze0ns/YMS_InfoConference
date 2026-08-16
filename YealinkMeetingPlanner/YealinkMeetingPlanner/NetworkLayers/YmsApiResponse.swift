@@ -10,8 +10,8 @@ import SwiftData
 struct YmsApiResponce{
    
     func useYLCredentials(type: String, url: String, data: Data?) -> [String:String] {
-        let ylAccessKey = APIConfig.ylAccessKey
-        let ylSecretKey = APIConfig.ylSecretKey
+        let ylAccessKey = APIConfig.currentYlAccessKey
+        let ylSecretKey = APIConfig.currentYlSecretKey
         let guid = UUID().uuidString.replacingOccurrences(of: "-", with: "")
         let curDate = Date().timeIntervalSince1970 * 1000
         let dateToString = String(format: "%.0f", curDate)
@@ -34,9 +34,8 @@ struct YmsApiResponce{
             let hmac = HMAC<SHA256>.authenticationCode(for: stringData, using: SymmetricKey(data: secretData))
             hashInB64 = Data(hmac).base64EncodedString()
         }
-        print(ylAccessKey)
-        print("Запрос")
-        print(ylSecretKey)
+        // Логирование секретных ключей недопустимо
+        print("Запрос: \(type) \(url)")
         return type == "GET" ? [
             "X-Ca-Key": ylAccessKey,
             "X-Ca-Nonce": guid,

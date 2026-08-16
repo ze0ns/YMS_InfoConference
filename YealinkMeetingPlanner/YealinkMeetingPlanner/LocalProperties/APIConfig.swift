@@ -22,4 +22,23 @@ struct APIConfig {
     static let baseUrl = loadPlistDict()?["baseUrl"] as? String ?? ""
     static let hostURL = loadPlistDict()?["hostURL"] as? String ?? ""
 
+    // MARK: - Актуальные ключи: Keychain имеет приоритет над Config.plist
+
+    /// Ключи, отсканированные и сохранённые в Keychain (nil — если их там нет)
+    static var keychainSecretKey: String? {
+        KeychainManager.shared.load(key: ScanViewModel.secretKeychainKey)
+    }
+    static var keychainAccessKey: String? {
+        KeychainManager.shared.load(key: ScanViewModel.accessKeychainKey)
+    }
+
+    /// Используются ли в данный момент ключи из Keychain
+    static var usesKeychainKeys: Bool {
+        keychainSecretKey != nil && keychainAccessKey != nil
+    }
+
+    /// Актуальные ключи для подписи запросов к API
+    static var currentYlSecretKey: String { keychainSecretKey ?? ylSecretKey }
+    static var currentYlAccessKey: String { keychainAccessKey ?? ylAccessKey }
+
 }

@@ -42,6 +42,18 @@ struct SettingsView: View {
                         LabeledContent("Комната", value: globalState.selectedRoom?.namePinyin ?? "Не выбрана")
                     }
                 }
+
+                // MARK: Ключи доступа к серверу
+                Section("Сервер") {
+                    NavigationLink {
+                        KeysScannerView()
+                    } label: {
+                        LabeledContent(
+                            "Ключи доступа",
+                            value: APIConfig.usesKeychainKeys ? "Сканированы" : "Config.plist"
+                        )
+                    }
+                }
             }
             .navigationTitle("Настройки")
             .navigationBarTitleDisplayMode(.inline)
