@@ -7,19 +7,10 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - Request Body
-let getRoom: [String: Any?] = [
-    "key" : nil ,
-    "categoryID": nil,
-    "type":nil,
-    "skip": nil,
-    "limit":100
-]
-
-// MARK: - View
 struct SelectRoomView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppState.self) private var appState
 
     @StateObject private var viewModel = SelectRoomViewModel()
 
@@ -28,7 +19,7 @@ struct SelectRoomView: View {
             List {
                 ForEach(viewModel.rooms) { room in
                     Button {
-                        viewModel.selectedRoom = room
+                        viewModel.selectRoom(room)
                     } label: {
                         HStack {
                             Text(room.namePinyin)
@@ -68,10 +59,9 @@ struct SelectRoomView: View {
             }
         }
         .task {
-            viewModel.configure(modelContext: modelContext)
+            viewModel.configure(modelContext: modelContext, appState: appState)
             await viewModel.fetchAndSaveRooms()
         }
-
     }
 }
 
@@ -87,5 +77,6 @@ struct SelectRoomView: View {
     return NavigationStack {
         SelectRoomView()
             .modelContainer(container)
+            .environment(AppState())
     }
 }

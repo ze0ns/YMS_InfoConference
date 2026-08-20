@@ -7,51 +7,92 @@
 
 import SwiftUI
 import Combine
+import os
 
+@MainActor
 class WeatherViewModel: ObservableObject {
     @Published var weatherData: WeatherData?
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
-    private var cancellables = Set<AnyCancellable>()
 
-    
-    func fetchWeather(latitude: Double, longitude: Double) {
+    private let service: WeatherServiceProtocol
+    private let settings: SettingsStore
+
+    private static let cacheDataKeyPrefix = "weather_cache_data_"
+    private static let cacheTimestampKeyPrefix = "weather_cache_ts_"
+    private static let cacheValiditySeconds: TimeInterval = 30 * 60 // 30 минут
+
+    init(service: WeatherServiceProtocol? = nil, settings: SettingsStore? = nil) {
+        self.service = service ?? WeatherService.shared
+        self.settings = settings ?? SettingsStore.shared
+    }
+
+    /// Загружает погоду для выбранного в настройках города.
+    /// View не знает ни про город, ни про координаты.
+    func fetchWeather() async {
+        let city = settings.selectedCity
+
+        // Кэш текущего города актуален — не ходим в сеть
+        if isCacheValid(cityId: city.id) {
+            weatherData = loadCachedWeather(cityId: city.id)
+            return
+        }
+
         isLoading = true
         errorMessage = nil
-        WeatherService.shared.fetchWeatherData(latitude: latitude, longitude: longitude)
-            .sink(
-                receiveCompletion: { completion in
-                    if case let .failure(error) = completion {
-                        self.errorMessage = error.localizedDescription
-                        self.isLoading = false
-                    }
-                },
-                receiveValue: { data in
-                    self.weatherData = data
-                    self.isLoading = false
-                }
-            )
-            .store(in: &cancellables)
+
+        do {
+            let data = try await service.fetchWeather(latitude: city.latitude, longitude: city.longitude)
+            weatherData = data
+            saveCachedWeather(data, cityId: city.id)
+        } catch {
+            // Ошибка показывается только если нет данных вообще — иначе остаётся прежний прогноз
+            if weatherData == nil {
+                errorMessage = error.localizedDescription
+            }
+            AppLog.network.error("Ошибка погоды: \(error.localizedDescription)")
+        }
+
+        isLoading = false
     }
-    func getWeatherIconFor(for code: Int) -> String {
-        // Словарь: Код WMO -> Имя SF Symbol
-        let weatherMap: [Int: String] = [
-            0: "sun.max.fill",             // Ясно
-            1: "cloud.sun.fill",           // Преимущественно ясно
-            2: "cloud.fill",               // Переменная облачность
-            3: "smoke.fill",               // Пасмурно (Apple использует smoke для сплошной облачности)
-            45: "cloud.fog.fill",          // Туман
-            51: "cloud.drizzle.fill",      // Легкая морось
-            61: "cloud.rain.fill",         // Небольшой дождь
-            63: "cloud.heavyrain.fill",    // Дождь
-            71: "cloud.snow.fill",         // Небольшой снег
-            80: "cloud.sun.rain.fill",     // Ливень (дождь с прояснениями)
-            95: "cloud.bolt.fill"          // Гроза
-        ]
-        
-        // Если код есть в словаре, возвращаем имя иконки.
-        // Если нет — возвращаем иконку вопроса по умолчанию.
-        return weatherMap[code] ?? "questionmark.circle.fill"
+
+    // MARK: - Иконки погоды (коды WMO → SF Symbols)
+
+    static func weatherIconName(for code: Int) -> String {
+        switch code {
+        case 0:  return "sun.max.fill"
+        case 1:  return "cloud.sun.fill"
+        case 2:  return "cloud.fill"
+        case 3:  return "smoke.fill"
+        case 45: return "cloud.fog.fill"
+        case 51: return "cloud.drizzle.fill"
+        case 61: return "cloud.rain.fill"
+        case 63: return "cloud.heavyrain.fill"
+        case 71: return "cloud.snow.fill"
+        case 80: return "cloud.sun.rain.fill"
+        case 95: return "cloud.bolt.fill"
+        default: return "questionmark.circle.fill"
+        }
+    }
+
+    // MARK: - Кэш по городу (UserDefaults)
+
+    private func saveCachedWeather(_ data: WeatherData, cityId: String) {
+        if let encoded = try? JSONEncoder().encode(data) {
+            UserDefaults.standard.set(encoded, forKey: Self.cacheDataKeyPrefix + cityId)
+            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Self.cacheTimestampKeyPrefix + cityId)
+        }
+    }
+
+    private func loadCachedWeather(cityId: String) -> WeatherData? {
+        guard let data = UserDefaults.standard.data(forKey: Self.cacheDataKeyPrefix + cityId) else { return nil }
+        return try? JSONDecoder().decode(WeatherData.self, from: data)
+    }
+
+    private func isCacheValid(cityId: String) -> Bool {
+        guard let ts = UserDefaults.standard.object(forKey: Self.cacheTimestampKeyPrefix + cityId) as? TimeInterval else {
+            return false
+        }
+        return Date().timeIntervalSince1970 - ts < Self.cacheValiditySeconds
     }
 }

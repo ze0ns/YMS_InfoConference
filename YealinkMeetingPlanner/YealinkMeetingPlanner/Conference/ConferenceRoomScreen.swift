@@ -6,27 +6,17 @@
 //
 import SwiftUI
 import SwiftData
-import Combine
 
 struct ConferenceRoomScreen: View {
+    @Environment(AppState.self) private var appState
+    @Environment(\.dismiss) private var dismiss
+
     @Query(sort: \ConfDataModel.startDateTimeStamp, order: .forward)
     private var conferences: [ConfDataModel]
 
     @StateObject private var viewModel: ConferenceViewModel
-    @State private var appState = AppState.shared
-
-    @State private var isSelectRoomPresented = false
     @State private var isPinEntryPresented = false
     @State private var isSettingsPresented = false
-
-    private let scheduleConf: [String: Any] = [:]
-
-    let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
-
-    private var apiUrl: String {
-        guard let roomId = appState.selectedRoom?.id else { return "" }
-        return "api/open/v1/conference/record/\(roomId)/pagedList"
-    }
 
     init(viewModel: ConferenceViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -63,9 +53,7 @@ struct ConferenceRoomScreen: View {
             }
             .background(Color.BG)
             .overlay(alignment: .bottomTrailing) {
-                Button(action: {
-                    isPinEntryPresented = true
-                }) {
+                Button(action: { isPinEntryPresented = true }) {
                     Image(systemName: "gearshape")
                         .font(.title2)
                         .foregroundColor(.black)
@@ -76,11 +64,6 @@ struct ConferenceRoomScreen: View {
                 }
                 .padding(.trailing, 30)
                 .padding(.bottom, 10)
-            }
-            .sheet(isPresented: $isSelectRoomPresented) {
-                NavigationStack {
-                    SelectRoomView()
-                }
             }
             .sheet(isPresented: $isPinEntryPresented) {
                 PinEntryView {
@@ -93,26 +76,11 @@ struct ConferenceRoomScreen: View {
             }
         }
         .task {
-            viewModel.loadCachedData()
-            await reloadSchedule()
+            viewModel.start()
         }
-        .onChange(of: appState.selectedRoom?.id) { _, _ in
-            Task { await reloadSchedule() }
+        .task(id: viewModel.roomId) {
+            await viewModel.loadSchedule()
         }
-        .onReceive(timer) { _ in
-            guard !apiUrl.isEmpty else { return }
-            Task {
-                await viewModel.fetchConferenceSchedule(url: apiUrl, scheduleConf: scheduleConf)
-            }
-        }
-    }
-
-    private func reloadSchedule() async {
-        guard !apiUrl.isEmpty else {
-            viewModel.clearData()
-            return
-        }
-        await viewModel.fetchConferenceSchedule(url: apiUrl, scheduleConf: scheduleConf)
     }
 
     // MARK: - Компоненты данных
@@ -158,7 +126,11 @@ struct ConferenceRoomScreen: View {
     @ViewBuilder
     private func scheduleView() -> some View {
         let slots = conferences.map { meeting in
-            (meeting.conferenceSubject, meeting.startTime, meeting.endTime)
+            BusySlot(
+                title: meeting.conferenceSubject,
+                start: meeting.startTime,
+                end: meeting.endTime
+            )
         }
 
         ScheduleView(
@@ -173,14 +145,17 @@ struct ConferenceRoomScreen: View {
 // MARK: - Preview
 struct ConferenceRoomScreen_Previews: PreviewProvider {
     static var previews: some View {
+        let appState = AppState()
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try! ModelContainer(for: ConfDataModel.self, RoomModel.self, configurations: config)
 
         return ConferenceRoomScreen(
             viewModel: ConferenceViewModel(
+                appState: appState,
                 modelContext: container.mainContext
             )
         )
         .modelContainer(container)
+        .environment(appState)
     }
 }

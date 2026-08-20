@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct YealinkMeetingPlannerApp: App {
+    @State private var appState = AppState()
+
     let sharedModelContainer: ModelContainer = {
         let schema = Schema([
             ConfDataModel.self,
@@ -27,10 +29,12 @@ struct YealinkMeetingPlannerApp: App {
         WindowGroup {
             ConferenceRoomScreen(
                 viewModel: ConferenceViewModel(
+                    appState: appState,
                     modelContext: sharedModelContainer.mainContext
                 )
             )
         }
         .modelContainer(sharedModelContainer)
+        .environment(appState)
     }
 }

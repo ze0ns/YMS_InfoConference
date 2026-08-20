@@ -7,12 +7,13 @@
 
 
 import Foundation
+import os
 
 struct APIConfig {
     private static func loadPlistDict() -> [String: Any]? {
         guard let path = Bundle.main.path(forResource: "Config", ofType: "plist"),
               let dict = NSDictionary(contentsOfFile: path) as? [String: Any] else {
-            print("Ошибка: Файл YourFileName.plist не найден или поврежден")
+            AppLog.app.error("Файл Config.plist не найден или поврежден")
             return nil
         }
         return dict

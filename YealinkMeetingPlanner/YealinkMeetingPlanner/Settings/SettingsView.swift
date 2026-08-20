@@ -9,8 +9,8 @@ import SwiftUI
 /// Экран настроек: выбор города, смена пин-кода, выбор комнаты
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppState.self) private var appState
     @State private var settings = SettingsStore.shared
-    @State private var appState = AppState.shared
     @State private var isChangePinPresented = false
 
     var body: some View {

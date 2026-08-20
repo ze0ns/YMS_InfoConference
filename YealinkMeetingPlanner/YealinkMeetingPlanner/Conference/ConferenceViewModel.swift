@@ -7,6 +7,7 @@
 import SwiftUI
 import Combine
 import SwiftData
+import os
 
 @MainActor
 class ConferenceViewModel: ObservableObject {
@@ -14,20 +15,74 @@ class ConferenceViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     @Published var isLoading = false
 
-    private let ymsApi: YmsApiResponce
+    private let api: YmsApiService
+    private let appState: AppState
     private let modelContext: ModelContext
     private var cancellables = Set<AnyCancellable>()
 
-    init(ymsApi: YmsApiResponce = YmsApiResponce(), modelContext: ModelContext) {
-        self.ymsApi = ymsApi
+    /// ID выбранной комнаты — View использует его как .task(id:).
+    var roomId: String? { appState.selectedRoom?.id }
+
+    init(api: YmsApiService? = nil, appState: AppState, modelContext: ModelContext) {
+        self.api = api ?? YmsApiResponse()
+        self.appState = appState
         self.modelContext = modelContext
+    }
+
+    // MARK: - Жизненный цикл
+
+    /// Загрузить кэш из базы и запустить периодическое обновление.
+    func start() {
+        loadCachedData()
+
+        Timer.publish(every: 60, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.refreshSchedule()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Полная загрузка расписания (вызывается из View через .task(id:)).
+    func loadSchedule() async {
+        guard let roomId else {
+            clearData()
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let schedule = try await api.getConferenceSchedule(roomId: roomId)
+            saveData(schedulerInfo: schedule)
+        } catch {
+            errorMessage = error.localizedDescription
+            AppLog.network.error("Ошибка загрузки расписания: \(error.localizedDescription)")
+        }
+
+        isLoading = false
+    }
+
+    private func refreshSchedule() {
+        guard let roomId else { return }
+        Task {
+            do {
+                let schedule = try await api.getConferenceSchedule(roomId: roomId)
+                saveData(schedulerInfo: schedule)
+            } catch {
+                AppLog.network.error("Ошибка обновления расписания: \(error.localizedDescription)")
+            }
+        }
     }
 
     // MARK: - Текущая встреча
 
-    /// Возвращает встречу, которая идёт прямо сейчас, или nil если комната свободна.
     var currentMeeting: ConfDataModel? {
-        let nowMinutes = Self.currentMinutes()
+        let nowMinutes = Self.timeToMinutes(
+            hours: Calendar.current.component(.hour, from: Date()),
+            minutes: Calendar.current.component(.minute, from: Date())
+        )
         return confDataItems.first { conf in
             let start = Self.timeToMinutes(conf.startTime)
             let end = Self.timeToMinutes(conf.endTime)
@@ -35,36 +90,17 @@ class ConferenceViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Загрузка из базы
+    // MARK: - Работа с базой данных (SwiftData)
 
-    /// Загружает сохранённые встречи из SwiftData (кэш на случай запуска без сети).
     func loadCachedData() {
         do {
             confDataItems = try modelContext.fetch(
                 FetchDescriptor<ConfDataModel>(sortBy: [SortDescriptor(\.startDateTimeStamp)])
             )
         } catch {
-            errorMessage = "Ошибка чтения данных: \(error.localizedDescription)"
+            AppLog.storage.error("Ошибка чтения кэша расписания: \(error.localizedDescription)")
         }
     }
-
-    // MARK: - Сетевые запросы
-
-    func fetchConferenceSchedule(url: String, scheduleConf: [String: Any]) async {
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            let confInfo = try await ymsApi.getConfSchedule(funcURL: url, json: scheduleConf)
-            saveData(schedulerInfo: confInfo)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-
-        isLoading = false
-    }
-
-    // MARK: - Работа с базой данных (SwiftData)
 
     private func saveData(schedulerInfo: ConferenseSheduler) {
         do {
@@ -72,7 +108,6 @@ class ConferenceViewModel: ObservableObject {
 
             let confInfoList = schedulerInfo.data.data
             for info in confInfoList {
-                let remark = info.plainEmailRemark
                 let confsInfo = ConfDataModel(
                     conferencePlanId: info.conferencePlanID,
                     conferenceSubject: info.conferenceSubject.subject,
@@ -83,7 +118,7 @@ class ConferenceViewModel: ObservableObject {
                     organizerId: info.organizer.id,
                     organizerName: info.organizer.name,
                     organizeExt: info.organizer.organizerExtension,
-                    plainEmailRemark: remark
+                    plainEmailRemark: info.plainEmailRemark
                 )
                 modelContext.insert(confsInfo)
             }
@@ -91,6 +126,7 @@ class ConferenceViewModel: ObservableObject {
             loadCachedData()
         } catch {
             errorMessage = "Ошибка сохранения данных: \(error.localizedDescription)"
+            AppLog.storage.error("Ошибка сохранения расписания: \(error.localizedDescription)")
         }
     }
 
@@ -115,17 +151,15 @@ class ConferenceViewModel: ObservableObject {
 
     // MARK: - Вспомогательные
 
-    private static func currentMinutes() -> Int {
-        let now = Date()
-        let calendar = Calendar.current
-        return calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
-    }
-
-    private static func timeToMinutes(_ timeString: String) -> Int {
+    static func timeToMinutes(_ timeString: String) -> Int {
         let parts = timeString.split(separator: ":")
         guard parts.count == 2,
               let hours = Int(parts[0]),
               let minutes = Int(parts[1]) else { return 0 }
         return hours * 60 + minutes
+    }
+
+    private static func timeToMinutes(hours: Int, minutes: Int) -> Int {
+        hours * 60 + minutes
     }
 }
