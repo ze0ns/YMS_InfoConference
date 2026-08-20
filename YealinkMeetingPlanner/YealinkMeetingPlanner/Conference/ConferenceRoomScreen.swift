@@ -4,70 +4,55 @@
 //
 //  Created by Oschepkov Aleksandr on 28.05.2026.
 //
-
-
 import SwiftUI
 import SwiftData
 import Combine
 
-// MARK: - View
 struct ConferenceRoomScreen: View {
-    @Environment(\.modelContext) private var modelContext
-    let container = try! ModelContainer(for: RoomModel.self)
-    
-    // Читаем данные из SwiftData, отсортированные по времени начала
     @Query(sort: \ConfDataModel.startDateTimeStamp, order: .forward)
     private var conferences: [ConfDataModel]
-    
-    @StateObject private var viewModel: ConferenceViewModel
-    
-    // Подключаем глобальное состояние, чтобы View реагировала на смену выбранной комнаты
-    @State private var globalState = GlobalAppState.shared
-    
-    // 1. Добавляем переменную состояния для управления открытием окна
-    @State private var isSelectRoomPresented = false
 
-    // Настройки: сначала запрос пин-кода, затем сам экран настроек
+    @StateObject private var viewModel: ConferenceViewModel
+    @State private var appState = AppState.shared
+
+    @State private var isSelectRoomPresented = false
     @State private var isPinEntryPresented = false
     @State private var isSettingsPresented = false
-    
+
     private let scheduleConf: [String: Any] = [:]
-    
+
     let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
-    
-    // MARK: - Динамический URL
- 
+
     private var apiUrl: String {
-        guard let roomId = globalState.selectedRoom?.id else { return "" }
+        guard let roomId = appState.selectedRoom?.id else { return "" }
         return "api/open/v1/conference/record/\(roomId)/pagedList"
     }
-    
+
     init(viewModel: ConferenceViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
-    
+
     var body: some View {
         GeometryReader { geometry in
             let screenWidth = geometry.size.width
             let meetingCardWidth = (screenWidth - 32) * 0.7
             let weatherCardHeight = geometry.size.height * 0.15
-            
+
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Берем название комнаты из глобальной переменной
-                    HeaderView(roomName: globalState.selectedRoom?.namePinyin ?? "Выберите комнату")
+                    HeaderView(roomName: appState.selectedRoom?.namePinyin ?? "Выберите комнату")
                         .cardStyle()
                         .padding(.horizontal, 20)
-                    
+
                     HStack(alignment: .top, spacing: 20) {
                         currentMeetingView(width: meetingCardWidth)
                         scheduleView()
                     }
                     .padding(.horizontal, 20)
                 }
-                
+
                 Spacer()
-                
+
                 WeatherForecastView()
                     .frame(maxWidth: .infinity)
                     .frame(height: weatherCardHeight)
@@ -79,7 +64,6 @@ struct ConferenceRoomScreen: View {
             .background(Color.BG)
             .overlay(alignment: .bottomTrailing) {
                 Button(action: {
-                    // По нажатию на настройки сначала запрашиваем пин-код
                     isPinEntryPresented = true
                 }) {
                     Image(systemName: "gearshape")
@@ -96,7 +80,6 @@ struct ConferenceRoomScreen: View {
             .sheet(isPresented: $isSelectRoomPresented) {
                 NavigationStack {
                     SelectRoomView()
-                        .modelContainer(container)
                 }
             }
             .sheet(isPresented: $isPinEntryPresented) {
@@ -107,18 +90,14 @@ struct ConferenceRoomScreen: View {
             }
             .sheet(isPresented: $isSettingsPresented) {
                 SettingsView()
-                    .modelContainer(container)
             }
         }
         .task {
-            if !apiUrl.isEmpty {
-                do {
-                    try viewModel.clearData()
-                } catch {
-                    print("Ошибка очистки данных: $error)")
-                }
-                await viewModel.fetchConferenceSchedule(url: apiUrl, scheduleConf: scheduleConf)
-            }
+            viewModel.loadCachedData()
+            await reloadSchedule()
+        }
+        .onChange(of: appState.selectedRoom?.id) { _, _ in
+            Task { await reloadSchedule() }
         }
         .onReceive(timer) { _ in
             guard !apiUrl.isEmpty else { return }
@@ -127,13 +106,20 @@ struct ConferenceRoomScreen: View {
             }
         }
     }
-    
+
+    private func reloadSchedule() async {
+        guard !apiUrl.isEmpty else {
+            viewModel.clearData()
+            return
+        }
+        await viewModel.fetchConferenceSchedule(url: apiUrl, scheduleConf: scheduleConf)
+    }
+
     // MARK: - Компоненты данных
-    
+
     @ViewBuilder
     private func currentMeetingView(width: CGFloat) -> some View {
-        // Если комната еще не выбрана, показываем заглушку
-        if globalState.selectedRoom == nil {
+        if appState.selectedRoom == nil {
             CurrentMeetingView(
                 title: "Выберите комнату",
                 time: "",
@@ -144,9 +130,7 @@ struct ConferenceRoomScreen: View {
             .frame(width: width)
             .frame(maxHeight: .infinity)
             .cardStyle()
-        }
-        // Берем первую встречу из массива (она самая ближайшая, т.к. отсортировано)
-        else if let meeting = conferences.first {
+        } else if let meeting = viewModel.currentMeeting {
             CurrentMeetingView(
                 title: meeting.conferenceSubject,
                 time: "\(meeting.startTime) – \(meeting.endTime)",
@@ -158,9 +142,8 @@ struct ConferenceRoomScreen: View {
             .frame(maxHeight: .infinity)
             .cardStyle()
         } else {
-            // Placeholder, если встреч нет
             CurrentMeetingView(
-                title: "Нет запланированных встреч",
+                title: conferences.isEmpty ? "Нет запланированных встреч" : "Комната свободна",
                 time: "",
                 contactName: "",
                 contactPhone: "",
@@ -171,14 +154,13 @@ struct ConferenceRoomScreen: View {
             .cardStyle()
         }
     }
-    
+
     @ViewBuilder
     private func scheduleView() -> some View {
-        // Маппим модели SwiftData в кортежи для ScheduleView
         let slots = conferences.map { meeting in
             (meeting.conferenceSubject, meeting.startTime, meeting.endTime)
         }
-        
+
         ScheduleView(
             currentDate: Date(),
             busySlots: slots
@@ -191,13 +173,11 @@ struct ConferenceRoomScreen: View {
 // MARK: - Preview
 struct ConferenceRoomScreen_Previews: PreviewProvider {
     static var previews: some View {
-        // Безопасное создание контейнера для превью
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try! ModelContainer(for: ConfDataModel.self, configurations: config)
-        
+        let container = try! ModelContainer(for: ConfDataModel.self, RoomModel.self, configurations: config)
+
         return ConferenceRoomScreen(
             viewModel: ConferenceViewModel(
-                ymsApi: YmsApiResponce(),
                 modelContext: container.mainContext
             )
         )

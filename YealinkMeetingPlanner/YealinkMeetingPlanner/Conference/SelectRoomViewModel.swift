@@ -21,7 +21,6 @@ class SelectRoomViewModel: ObservableObject {
         self.ymsApi = ymsApi
     }
 
-    /// Вызывается из View при появлении — контекст доступен только через @Environment
     func configure(modelContext: ModelContext) {
         if self.modelContext == nil {
             self.modelContext = modelContext
@@ -29,8 +28,8 @@ class SelectRoomViewModel: ObservableObject {
     }
 
     var selectedRoom: RoomModel? {
-        get { GlobalAppState.shared.selectedRoom }
-        set { GlobalAppState.shared.selectedRoom = newValue }
+        get { AppState.shared.selectedRoom }
+        set { AppState.shared.selectedRoom = newValue }
     }
 
     // MARK: - Загрузка и сохранение комнат
@@ -44,14 +43,11 @@ class SelectRoomViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            // 1. Получаем данные из API
             let response = try await ymsApi.getInfo(funcURL: "api/open/v1/room/pagedList", json: getRoom)
             let fetchedRooms = response.data.data
 
-            // 2. Удаляем старые записи из базы
             try clearRoomsInternal(modelContext)
 
-            // 3. Маппим и сохраняем новые данные
             for roomData in fetchedRooms {
                 modelContext.insert(
                     RoomModel(id: roomData.id, namePinyin: roomData.namePinyin)
@@ -59,10 +55,8 @@ class SelectRoomViewModel: ObservableObject {
             }
             try modelContext.save()
 
-            // 4. Обновляем список из базы
             rooms = try modelContext.fetch(FetchDescriptor<RoomModel>(sortBy: [SortDescriptor(\.namePinyin)]))
 
-            // 5. Если выбранная комната удалена из API — сбрасываем выбор
             if let currentSelected = selectedRoom,
                !rooms.contains(where: { $0.id == currentSelected.id }) {
                 selectedRoom = nil

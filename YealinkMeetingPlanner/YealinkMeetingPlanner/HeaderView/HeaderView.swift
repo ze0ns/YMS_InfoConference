@@ -6,16 +6,14 @@
 //
 import SwiftUI
 
-
 struct HeaderView: View {
     let roomName: String
-    let date = Date()
-    let headerViewModel = HeaderViewModel()
-    
+    @StateObject private var headerViewModel = HeaderViewModel()
+
     var body: some View {
         HStack(spacing: 8) {
             Image(.metting)
-            VStack(alignment: .leading){
+            VStack(alignment: .leading) {
                 Text(roomName)
                     .font(.largeTitle)
                     .bold()
@@ -26,12 +24,12 @@ struct HeaderView: View {
             }
             .padding(.leading, 20)
             Spacer()
-            VStack(alignment: .trailing){
-                Text(headerViewModel.extractDateString(from: date))
+            VStack(alignment: .trailing) {
+                Text(headerViewModel.dateString(from: headerViewModel.currentDate))
                     .font(.headline)
                     .foregroundColor(.white)
                     .padding(.top, 4)
-                Text(headerViewModel.extractTimeOnly(from: date) ?? "22 Мая 2000")
+                Text(headerViewModel.timeString(from: headerViewModel.currentDate))
                     .font(.largeTitle)
                     .foregroundColor(.white)
                     .padding(.top, 4)
@@ -40,6 +38,7 @@ struct HeaderView: View {
         }
     }
 }
+
 #Preview {
     HeaderView(roomName: "Библиотека")
 }

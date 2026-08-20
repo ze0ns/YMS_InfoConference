@@ -10,12 +10,12 @@ import SwiftData
 
 @main
 struct YealinkMeetingPlannerApp: App {
-    var sharedModelContainer: ModelContainer = {
+    let sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            ConfDataModel.self,
+            RoomModel.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
@@ -25,7 +25,11 @@ struct YealinkMeetingPlannerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ConferenceRoomScreen(viewModel: ConferenceViewModel(ymsApi: YmsApiResponce(), modelContext: try! ModelContainer(for: ConfDataModel.self).mainContext))
+            ConferenceRoomScreen(
+                viewModel: ConferenceViewModel(
+                    modelContext: sharedModelContainer.mainContext
+                )
+            )
         }
         .modelContainer(sharedModelContainer)
     }

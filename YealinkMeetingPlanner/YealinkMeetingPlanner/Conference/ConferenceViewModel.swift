@@ -18,17 +18,43 @@ class ConferenceViewModel: ObservableObject {
     private let modelContext: ModelContext
     private var cancellables = Set<AnyCancellable>()
 
-    init(ymsApi: YmsApiResponce, modelContext: ModelContext) {
+    init(ymsApi: YmsApiResponce = YmsApiResponce(), modelContext: ModelContext) {
         self.ymsApi = ymsApi
         self.modelContext = modelContext
     }
+
+    // MARK: - Текущая встреча
+
+    /// Возвращает встречу, которая идёт прямо сейчас, или nil если комната свободна.
+    var currentMeeting: ConfDataModel? {
+        let nowMinutes = Self.currentMinutes()
+        return confDataItems.first { conf in
+            let start = Self.timeToMinutes(conf.startTime)
+            let end = Self.timeToMinutes(conf.endTime)
+            return nowMinutes >= start && nowMinutes < end
+        }
+    }
+
+    // MARK: - Загрузка из базы
+
+    /// Загружает сохранённые встречи из SwiftData (кэш на случай запуска без сети).
+    func loadCachedData() {
+        do {
+            confDataItems = try modelContext.fetch(
+                FetchDescriptor<ConfDataModel>(sortBy: [SortDescriptor(\.startDateTimeStamp)])
+            )
+        } catch {
+            errorMessage = "Ошибка чтения данных: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Сетевые запросы
 
     func fetchConferenceSchedule(url: String, scheduleConf: [String: Any]) async {
         isLoading = true
         errorMessage = nil
 
         do {
-            // Используем структуру ConferenseSheduler из вашего вопроса
             let confInfo = try await ymsApi.getConfSchedule(funcURL: url, json: scheduleConf)
             saveData(schedulerInfo: confInfo)
         } catch {
@@ -40,18 +66,13 @@ class ConferenceViewModel: ObservableObject {
 
     // MARK: - Работа с базой данных (SwiftData)
 
-    /// Очистка старых данных и запись новых
     private func saveData(schedulerInfo: ConferenseSheduler) {
         do {
-            // 1. Удаляем старые данные
             try clearDataInternal()
 
-            // 2. Записываем новые данные
             let confInfoList = schedulerInfo.data.data
             for info in confInfoList {
-                
-                let remark = (info.plainEmailRemark)
-                
+                let remark = info.plainEmailRemark
                 let confsInfo = ConfDataModel(
                     conferencePlanId: info.conferencePlanID,
                     conferenceSubject: info.conferenceSubject.subject,
@@ -66,20 +87,18 @@ class ConferenceViewModel: ObservableObject {
                 )
                 modelContext.insert(confsInfo)
             }
-            
-            // 3. Сохраняем изменения в базу
             try modelContext.save()
-            
+            loadCachedData()
         } catch {
             errorMessage = "Ошибка сохранения данных: \(error.localizedDescription)"
         }
     }
 
-    /// Публичный метод для очистки данных
     func clearData() {
         do {
             try clearDataInternal()
             try modelContext.save()
+            confDataItems = []
         } catch {
             errorMessage = "Ошибка очистки данных: \(error.localizedDescription)"
         }
@@ -88,10 +107,25 @@ class ConferenceViewModel: ObservableObject {
     private func clearDataInternal() throws {
         let descriptor = FetchDescriptor<ConfDataModel>()
         let existingItems = try modelContext.fetch(descriptor)
-        
         for item in existingItems {
             modelContext.delete(item)
         }
         try modelContext.save()
+    }
+
+    // MARK: - Вспомогательные
+
+    private static func currentMinutes() -> Int {
+        let now = Date()
+        let calendar = Calendar.current
+        return calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
+    }
+
+    private static func timeToMinutes(_ timeString: String) -> Int {
+        let parts = timeString.split(separator: ":")
+        guard parts.count == 2,
+              let hours = Int(parts[0]),
+              let minutes = Int(parts[1]) else { return 0 }
+        return hours * 60 + minutes
     }
 }

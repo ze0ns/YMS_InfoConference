@@ -10,7 +10,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var settings = SettingsStore.shared
-    @State private var globalState = GlobalAppState.shared
+    @State private var appState = AppState.shared
     @State private var isChangePinPresented = false
 
     var body: some View {
@@ -39,7 +39,7 @@ struct SettingsView: View {
                     NavigationLink {
                         SelectRoomView()
                     } label: {
-                        LabeledContent("Комната", value: globalState.selectedRoom?.namePinyin ?? "Не выбрана")
+                        LabeledContent("Комната", value: appState.selectedRoom?.namePinyin ?? "Не выбрана")
                     }
                 }
 
