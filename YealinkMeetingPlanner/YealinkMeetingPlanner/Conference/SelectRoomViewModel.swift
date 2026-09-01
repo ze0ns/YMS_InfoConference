@@ -63,7 +63,7 @@ class SelectRoomViewModel: ObservableObject {
             // 3. Маппим и сохраняем новые данные
             for roomData in fetchedRooms {
                 modelContext.insert(
-                    RoomModel(id: roomData.id, namePinyin: roomData.namePinyin)
+                    RoomModel(id: roomData.id, namePinyin: roomData.namePinyin, name: roomData.name)
                 )
             }
             try modelContext.save()

@@ -10,8 +10,12 @@ import Observation
 /// внедряется через `.environment(...)` и передаётся в ViewModel'ы.
 @Observable
 final class AppState {
-    private static let selectedRoomIdKey = "app_selected_room_id"
-    private static let selectedRoomNameKey = "app_selected_room_name"
+    /// Один ключ на всю выбранную комнату (JSON всех полей RoomModel).
+    private static let selectedRoomKey = "app_selected_room"
+
+    /// Устаревшие ключи (id и имя по отдельности) — читаются один раз для миграции.
+    private static let legacyRoomIdKey = "app_selected_room_id"
+    private static let legacyRoomNameKey = "app_selected_room_name"
 
     var selectedRoom: RoomModel? {
         didSet {
@@ -20,20 +24,35 @@ final class AppState {
     }
 
     init() {
-        let savedId = UserDefaults.standard.string(forKey: Self.selectedRoomIdKey)
-        let savedName = UserDefaults.standard.string(forKey: Self.selectedRoomNameKey)
-        if let id = savedId, let name = savedName {
-            selectedRoom = RoomModel(id: id, namePinyin: name)
-        }
+        selectedRoom = Self.loadSelectedRoom()
     }
 
     private func persistSelectedRoom() {
-        if let room = selectedRoom {
-            UserDefaults.standard.set(room.id, forKey: Self.selectedRoomIdKey)
-            UserDefaults.standard.set(room.namePinyin, forKey: Self.selectedRoomNameKey)
+        if let room = selectedRoom,
+           let data = try? JSONEncoder().encode(room) {
+            UserDefaults.standard.set(data, forKey: Self.selectedRoomKey)
         } else {
-            UserDefaults.standard.removeObject(forKey: Self.selectedRoomIdKey)
-            UserDefaults.standard.removeObject(forKey: Self.selectedRoomNameKey)
+            UserDefaults.standard.removeObject(forKey: Self.selectedRoomKey)
         }
+    }
+
+    private static func loadSelectedRoom() -> RoomModel? {
+        let defaults = UserDefaults.standard
+
+        // Актуальный формат: вся комната одним JSON
+        if let data = defaults.data(forKey: selectedRoomKey),
+           let room = try? JSONDecoder().decode(RoomModel.self, from: data) {
+            return room
+        }
+
+        // Миграция со старого формата (id и имя по отдельности)
+        if let id = defaults.string(forKey: legacyRoomIdKey),
+           let name = defaults.string(forKey: legacyRoomNameKey) {
+            defaults.removeObject(forKey: legacyRoomIdKey)
+            defaults.removeObject(forKey: legacyRoomNameKey)
+            return RoomModel(id: id, namePinyin: name)
+        }
+
+        return nil
     }
 }

@@ -22,7 +22,7 @@ struct SelectRoomView: View {
                         viewModel.selectRoom(room)
                     } label: {
                         HStack {
-                            Text(room.namePinyin)
+                            Text(room.displayName)
                                 .foregroundColor(.primary)
 
                             Spacer()

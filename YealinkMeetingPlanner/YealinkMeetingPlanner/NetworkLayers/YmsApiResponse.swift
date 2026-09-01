@@ -101,14 +101,24 @@ struct YmsApiResponse: YmsApiService {
         return base
     }
 
-    // MARK: - Подпись запроса (HMAC-SHA256)
+}
 
-    private static func signedHeaders(method: String, path: String, bodyData: Data?) -> [String: String] {
-        let accessKey = APIConfig.currentYlAccessKey
-        let secretKey = APIConfig.currentYlSecretKey
-        let nonce = UUID().uuidString.replacingOccurrences(of: "-", with: "")
-        let timestamp = String(format: "%.0f", Date().timeIntervalSince1970 * 1000)
+// MARK: - Подпись запроса (HMAC-SHA256)
 
+/// Строит подписанные заголовки YMS API. Все входные данные (ключи, nonce,
+/// timestamp) передаются явно, поэтому логика детерминирована и тестируется
+/// юнит-тестами без моков Keychain и времени.
+enum RequestSigner {
+
+    static func signedHeaders(
+        method: String,
+        path: String,
+        bodyData: Data?,
+        accessKey: String,
+        secretKey: String,
+        nonce: String,
+        timestampMs: String
+    ) -> [String: String] {
         let contentMD5: String
         if let bodyData {
             contentMD5 = Data(Insecure.MD5.hash(data: bodyData)).base64EncodedString()
@@ -116,7 +126,7 @@ struct YmsApiResponse: YmsApiService {
             contentMD5 = ""
         }
 
-        let signString = "\(method)\nContent-MD5:\(contentMD5)\nX-Ca-Key:\(accessKey)\nX-Ca-Nonce:\(nonce)\nX-Ca-Timestamp:\(timestamp)\n\(path)"
+        let signString = "\(method)\nContent-MD5:\(contentMD5)\nX-Ca-Key:\(accessKey)\nX-Ca-Nonce:\(nonce)\nX-Ca-Timestamp:\(timestampMs)\n\(path)"
 
         var signature = ""
         if let secretData = secretKey.data(using: .utf8),
@@ -129,7 +139,7 @@ struct YmsApiResponse: YmsApiService {
             "Content-MD5": contentMD5,
             "X-Ca-Key": accessKey,
             "X-Ca-Nonce": nonce,
-            "X-Ca-Timestamp": timestamp,
+            "X-Ca-Timestamp": timestampMs,
             "X-Ca-Signature": signature,
             "Content-Type": "application/json;charset=UTF-8"
         ]

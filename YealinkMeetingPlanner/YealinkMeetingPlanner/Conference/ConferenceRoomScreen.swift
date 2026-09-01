@@ -30,7 +30,7 @@ struct ConferenceRoomScreen: View {
 
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 24) {
-                    HeaderView(roomName: appState.selectedRoom?.namePinyin ?? "Выберите комнату")
+                    HeaderView(roomName: appState.selectedRoom?.displayName ?? "Выберите комнату")
                         .cardStyle()
                         .padding(.horizontal, 20)
 

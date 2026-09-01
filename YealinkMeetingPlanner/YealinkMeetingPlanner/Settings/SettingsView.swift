@@ -39,7 +39,7 @@ struct SettingsView: View {
                     NavigationLink {
                         SelectRoomView()
                     } label: {
-                        LabeledContent("Комната", value: appState.selectedRoom?.namePinyin ?? "Не выбрана")
+                        LabeledContent("Комната", value: appState.selectedRoom?.displayName ?? "Не выбрана")
                     }
                 }
 

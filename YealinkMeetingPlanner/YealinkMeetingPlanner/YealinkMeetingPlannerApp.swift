@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import os
 
 @main
 struct YealinkMeetingPlannerApp: App {
@@ -19,7 +20,7 @@ struct YealinkMeetingPlannerApp: App {
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try Self.makeModelContainer(schema: schema, configuration: modelConfiguration)
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
@@ -36,5 +37,28 @@ struct YealinkMeetingPlannerApp: App {
         }
         .modelContainer(sharedModelContainer)
         .environment(appState)
+    }
+
+    // MARK: - Хранилище SwiftData
+
+    /// Создаёт контейнер; если сохранённое хранилище несовместимо со схемой
+    /// (например, после обновления приложения со старой версией модели),
+    /// сбрасывает кэш и пробует снова. Кэш расписания и комнат полностью
+    /// перезагружается с сервера, поэтому сброс безопасен.
+    private static func makeModelContainer(schema: Schema, configuration: ModelConfiguration) throws -> ModelContainer {
+        do {
+            return try ModelContainer(for: schema, configurations: [configuration])
+        } catch {
+            AppLog.storage.error("Хранилище несовместимо со схемой, сбрасываю кэш: \(error.localizedDescription, privacy: .public)")
+            resetPersistentStore(at: configuration.url)
+            return try ModelContainer(for: schema, configurations: [configuration])
+        }
+    }
+
+    private static func resetPersistentStore(at url: URL) {
+        let fileManager = FileManager.default
+        for suffix in ["", "-wal", "-shm"] {
+            try? fileManager.removeItem(atPath: url.path + suffix)
+        }
     }
 }

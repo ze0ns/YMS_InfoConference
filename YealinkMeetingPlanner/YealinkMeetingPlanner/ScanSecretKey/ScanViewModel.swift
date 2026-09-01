@@ -53,6 +53,9 @@ class ScanViewModel: ObservableObject {
         let success1 = KeychainManager.shared.save(key: Self.secretKeychainKey, value: text1)
         let success2 = KeychainManager.shared.save(key: Self.accessKeychainKey, value: text2)
 
+        // Ключи изменились — APIConfig должен перечитать Keychain
+        APIConfig.invalidateKeychainCache()
+
         saveResultMessage = (success1 && success2)
             ? "Ключи сохранены в Keychain"
             : "Ошибка сохранения ключей"
@@ -62,6 +65,10 @@ class ScanViewModel: ObservableObject {
     func deleteData() {
         KeychainManager.shared.delete(key: Self.secretKeychainKey)
         KeychainManager.shared.delete(key: Self.accessKeychainKey)
+
+        // Ключи изменились — APIConfig должен перечитать Keychain
+        APIConfig.invalidateKeychainCache()
+
         text1 = ""
         text2 = ""
         saveResultMessage = "Ключи удалены, используются ключи из Config.plist"

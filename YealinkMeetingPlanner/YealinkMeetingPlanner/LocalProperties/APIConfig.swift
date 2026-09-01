@@ -25,12 +25,36 @@ struct APIConfig {
 
     // MARK: - Актуальные ключи: Keychain имеет приоритет над Config.plist
 
+    // MARK: - Ключи из Keychain (с кэшем)
+
+    /// Кэш значений из Keychain: подпись каждого запроса читает оба ключа,
+    /// а SecItemCopyMatching — дорогая операция. Кэш читается один раз
+    /// и инвалидируется через `invalidateKeychainCache()` после изменения ключей.
+    private static var keychainKeyCache: (secret: String?, access: String?)?
+
     /// Ключи, отсканированные и сохранённые в Keychain (nil — если их там нет)
     static var keychainSecretKey: String? {
-        KeychainManager.shared.load(key: ScanViewModel.secretKeychainKey)
+        loadKeychainCache().secret
     }
     static var keychainAccessKey: String? {
-        KeychainManager.shared.load(key: ScanViewModel.accessKeychainKey)
+        loadKeychainCache().access
+    }
+
+    /// Сбрасывает кэш ключей Keychain. Вызывать после сохранения/удаления ключей.
+    static func invalidateKeychainCache() {
+        keychainKeyCache = nil
+    }
+
+    private static func loadKeychainCache() -> (secret: String?, access: String?) {
+        if let keychainKeyCache {
+            return keychainKeyCache
+        }
+        let cache = (
+            secret: KeychainManager.shared.load(key: ScanViewModel.secretKeychainKey),
+            access: KeychainManager.shared.load(key: ScanViewModel.accessKeychainKey)
+        )
+        keychainKeyCache = cache
+        return cache
     }
 
     /// Используются ли в данный момент ключи из Keychain

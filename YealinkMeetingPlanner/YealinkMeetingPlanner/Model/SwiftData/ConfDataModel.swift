@@ -12,7 +12,7 @@ class ConfDataModel: Identifiable, Hashable{
     var conferencePlanId: String
     var conferenceSubject: String
     var startDateTimeStamp: Int
-    var endDateTimeStamp: String
+    var endDateTimeStamp: Int
     var startTime: String
     var endTime: String
     var organizerId: String
@@ -20,7 +20,7 @@ class ConfDataModel: Identifiable, Hashable{
     var organizeExt: String
     let vID = UUID()
     var plainEmailRemark: String
-    init(conferencePlanId: String, conferenceSubject: String, startDateTimeStamp: Int, endDateTimeStamp: String, startTime: String, endTime: String, organizerId: String, organizerName: String, organizeExt: String, plainEmailRemark: String) {
+    init(conferencePlanId: String, conferenceSubject: String, startDateTimeStamp: Int, endDateTimeStamp: Int, startTime: String, endTime: String, organizerId: String, organizerName: String, organizeExt: String, plainEmailRemark: String) {
         self.conferencePlanId = conferencePlanId
         self.conferenceSubject = conferenceSubject
         self.startDateTimeStamp = startDateTimeStamp
@@ -32,7 +32,24 @@ class ConfDataModel: Identifiable, Hashable{
         self.organizeExt = organizeExt
         self.plainEmailRemark = plainEmailRemark
     }
-    
+
+    // MARK: - Дата начала/окончания (epoch)
+
+    /// Дата начала встречи.
+    var startDate: Date { Self.date(fromTimestamp: startDateTimeStamp) }
+
+    /// Дата окончания встречи.
+    var endDate: Date { Self.date(fromTimestamp: endDateTimeStamp) }
+
+    /// YMS отдаёт timestamp и в секундах, и в миллисекундах —
+    /// различаем по порядку величины.
+    static func date(fromTimestamp timestamp: Int) -> Date {
+        let seconds = timestamp > 1_000_000_000_000
+            ? TimeInterval(timestamp) / 1000
+            : TimeInterval(timestamp)
+        return Date(timeIntervalSince1970: seconds)
+    }
+
     static func == (lhs: ConfDataModel, rhs: ConfDataModel) -> Bool {
   let areEqual: Bool = lhs.vID == rhs.vID
         return areEqual

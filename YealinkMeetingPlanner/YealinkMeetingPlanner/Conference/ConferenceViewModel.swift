@@ -18,7 +18,12 @@ class ConferenceViewModel: ObservableObject {
     private let api: YmsApiService
     private let appState: AppState
     private let modelContext: ModelContext
-    private var cancellables = Set<AnyCancellable>()
+
+    /// Периодическое фоновое обновление расписания.
+    private var autoRefreshTask: Task<Void, Never>?
+
+    /// Интервал фонового обновления расписания, секунды.
+    private static let autoRefreshInterval: TimeInterval = 60
 
     /// ID выбранной комнаты — View использует его как .task(id:).
     var roomId: String? { appState.selectedRoom?.id }
@@ -34,59 +39,65 @@ class ConferenceViewModel: ObservableObject {
     /// Загрузить кэш из базы и запустить периодическое обновление.
     func start() {
         loadCachedData()
+        startAutoRefresh()
+    }
 
-        Timer.publish(every: 60, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                self?.refreshSchedule()
+    /// Единственный источник периодических обновлений — этот отменяемый цикл.
+    /// Живёт, пока жива ViewModel (создаётся один раз в App).
+    private func startAutoRefresh() {
+        autoRefreshTask?.cancel()
+        autoRefreshTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(Self.autoRefreshInterval))
+                guard let self, !Task.isCancelled else { return }
+                // Комната не выбрана — обновлять нечего (кэш уже очищен через .task(id:)).
+                guard self.roomId != nil else { continue }
+                // Фоновое обновление — без индикатора загрузки.
+                await self.loadSchedule(showLoadingIndicator: false)
             }
-            .store(in: &cancellables)
+        }
     }
 
     /// Полная загрузка расписания (вызывается из View через .task(id:)).
-    func loadSchedule() async {
-        guard let roomId else {
+    /// - Parameter showLoadingIndicator: показывать ли состояние isLoading.
+    func loadSchedule(showLoadingIndicator: Bool = true) async {
+        guard let roomID = roomId else {
             clearData()
             return
         }
 
-        isLoading = true
-        errorMessage = nil
+        if showLoadingIndicator {
+            isLoading = true
+            errorMessage = nil
+        }
 
         do {
-            let schedule = try await api.getConferenceSchedule(roomId: roomId)
+            let schedule = try await api.getConferenceSchedule(roomId: roomID)
+            // Пока шёл запрос, комната могла смениться — ответ устарел.
+            guard roomID == roomId else { return }
             saveData(schedulerInfo: schedule)
+        } catch is CancellationError {
+            // Запрос отменён (смена комнаты) — результат не нужен.
+            return
         } catch {
+            guard roomID == roomId else { return }
             errorMessage = error.localizedDescription
             AppLog.network.error("Ошибка загрузки расписания: \(error.localizedDescription)")
         }
 
-        isLoading = false
-    }
-
-    private func refreshSchedule() {
-        guard let roomId else { return }
-        Task {
-            do {
-                let schedule = try await api.getConferenceSchedule(roomId: roomId)
-                saveData(schedulerInfo: schedule)
-            } catch {
-                AppLog.network.error("Ошибка обновления расписания: \(error.localizedDescription)")
-            }
+        if showLoadingIndicator {
+            isLoading = false
         }
     }
 
     // MARK: - Текущая встреча
 
+    /// Встреча, идущая прямо сейчас. Сравнение по epoch-timestamp'ам:
+    /// не зависит от формата строк времени и таймзоны устройства.
     var currentMeeting: ConfDataModel? {
-        let nowMinutes = Self.timeToMinutes(
-            hours: Calendar.current.component(.hour, from: Date()),
-            minutes: Calendar.current.component(.minute, from: Date())
-        )
+        let now = Date()
         return confDataItems.first { conf in
-            let start = Self.timeToMinutes(conf.startTime)
-            let end = Self.timeToMinutes(conf.endTime)
-            return nowMinutes >= start && nowMinutes < end
+            conf.startDate <= now && now < conf.endDate
         }
     }
 
@@ -112,7 +123,7 @@ class ConferenceViewModel: ObservableObject {
                     conferencePlanId: info.conferencePlanID,
                     conferenceSubject: info.conferenceSubject.subject,
                     startDateTimeStamp: Int(info.conferenceTimePattern.conferenceTime.startDateTimeStamp),
-                    endDateTimeStamp: String(info.conferenceTimePattern.conferenceTime.endDateTimeStamp),
+                    endDateTimeStamp: Int(info.conferenceTimePattern.conferenceTime.endDateTimeStamp),
                     startTime: info.conferenceTimePattern.conferenceTime.startTime,
                     endTime: info.conferenceTimePattern.conferenceTime.endTime,
                     organizerId: info.organizer.id,
@@ -147,19 +158,5 @@ class ConferenceViewModel: ObservableObject {
             modelContext.delete(item)
         }
         try modelContext.save()
-    }
-
-    // MARK: - Вспомогательные
-
-    static func timeToMinutes(_ timeString: String) -> Int {
-        let parts = timeString.split(separator: ":")
-        guard parts.count == 2,
-              let hours = Int(parts[0]),
-              let minutes = Int(parts[1]) else { return 0 }
-        return hours * 60 + minutes
-    }
-
-    private static func timeToMinutes(hours: Int, minutes: Int) -> Int {
-        hours * 60 + minutes
     }
 }
