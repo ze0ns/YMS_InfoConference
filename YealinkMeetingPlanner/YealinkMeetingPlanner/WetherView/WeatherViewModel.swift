@@ -17,14 +17,16 @@ class WeatherViewModel: ObservableObject {
 
     private let service: WeatherServiceProtocol
     private let settings: SettingsStore
+    private let storage: DataStorage
 
     private static let cacheDataKeyPrefix = "weather_cache_data_"
     private static let cacheTimestampKeyPrefix = "weather_cache_ts_"
     private static let cacheValiditySeconds: TimeInterval = 30 * 60 // 30 минут
 
-    init(service: WeatherServiceProtocol? = nil, settings: SettingsStore? = nil) {
+    init(service: WeatherServiceProtocol? = nil, settings: SettingsStore? = nil, storage: DataStorage? = nil) {
         self.service = service ?? WeatherService.shared
         self.settings = settings ?? SettingsStore.shared
+        self.storage = storage ?? UserDefaults.standard
     }
 
     /// Загружает погоду для выбранного в настройках города.
@@ -58,21 +60,22 @@ class WeatherViewModel: ObservableObject {
 
     // MARK: - Иконки погоды (коды WMO → SF Symbols)
 
+    private static let weatherIconNames: [Int: String] = [
+        0: "sun.max.fill",
+        1: "cloud.sun.fill",
+        2: "cloud.fill",
+        3: "smoke.fill",
+        45: "cloud.fog.fill",
+        51: "cloud.drizzle.fill",
+        61: "cloud.rain.fill",
+        63: "cloud.heavyrain.fill",
+        71: "cloud.snow.fill",
+        80: "cloud.sun.rain.fill",
+        95: "cloud.bolt.fill"
+    ]
+
     static func weatherIconName(for code: Int) -> String {
-        switch code {
-        case 0:  return "sun.max.fill"
-        case 1:  return "cloud.sun.fill"
-        case 2:  return "cloud.fill"
-        case 3:  return "smoke.fill"
-        case 45: return "cloud.fog.fill"
-        case 51: return "cloud.drizzle.fill"
-        case 61: return "cloud.rain.fill"
-        case 63: return "cloud.heavyrain.fill"
-        case 71: return "cloud.snow.fill"
-        case 80: return "cloud.sun.rain.fill"
-        case 95: return "cloud.bolt.fill"
-        default: return "questionmark.circle.fill"
-        }
+        weatherIconNames[code] ?? "questionmark.circle.fill"
     }
 
     // MARK: - Форматирование дат прогноза
@@ -103,18 +106,18 @@ class WeatherViewModel: ObservableObject {
 
     private func saveCachedWeather(_ data: WeatherData, cityId: String) {
         if let encoded = try? JSONEncoder().encode(data) {
-            UserDefaults.standard.set(encoded, forKey: Self.cacheDataKeyPrefix + cityId)
-            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Self.cacheTimestampKeyPrefix + cityId)
+            storage.set(encoded, forKey: Self.cacheDataKeyPrefix + cityId)
+            storage.set(Date().timeIntervalSince1970, forKey: Self.cacheTimestampKeyPrefix + cityId)
         }
     }
 
     private func loadCachedWeather(cityId: String) -> WeatherData? {
-        guard let data = UserDefaults.standard.data(forKey: Self.cacheDataKeyPrefix + cityId) else { return nil }
+        guard let data = storage.data(forKey: Self.cacheDataKeyPrefix + cityId) else { return nil }
         return try? JSONDecoder().decode(WeatherData.self, from: data)
     }
 
     private func isCacheValid(cityId: String) -> Bool {
-        guard let ts = UserDefaults.standard.object(forKey: Self.cacheTimestampKeyPrefix + cityId) as? TimeInterval else {
+        guard let ts = storage.object(forKey: Self.cacheTimestampKeyPrefix + cityId) as? TimeInterval else {
             return false
         }
         return Date().timeIntervalSince1970 - ts < Self.cacheValiditySeconds

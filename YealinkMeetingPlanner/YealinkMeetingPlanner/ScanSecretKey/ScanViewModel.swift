@@ -14,6 +14,8 @@ class ScanViewModel: ObservableObject {
     static let secretKeychainKey = "yl_secret_key"
     static let accessKeychainKey = "yl_access_key"
 
+    private let keychain: KeychainService
+
     // Состояние полей ввода
     @Published var text1: String = ""
     @Published var text2: String = ""
@@ -30,10 +32,12 @@ class ScanViewModel: ObservableObject {
         !text1.isEmpty && !text2.isEmpty
     }
 
-    init() {
+    init(keychain: KeychainService? = nil) {
+        self.keychain = keychain ?? KeychainManager.shared
+
         // Предзаполняем поля значениями из Keychain, если они уже сохранены
-        text1 = KeychainManager.shared.load(key: Self.secretKeychainKey) ?? ""
-        text2 = KeychainManager.shared.load(key: Self.accessKeychainKey) ?? ""
+        text1 = self.keychain.load(key: Self.secretKeychainKey) ?? ""
+        text2 = self.keychain.load(key: Self.accessKeychainKey) ?? ""
     }
     
     func openScanner(for field: Int) {
@@ -50,8 +54,8 @@ class ScanViewModel: ObservableObject {
     }
     
     func saveData() {
-        let success1 = KeychainManager.shared.save(key: Self.secretKeychainKey, value: text1)
-        let success2 = KeychainManager.shared.save(key: Self.accessKeychainKey, value: text2)
+        let success1 = keychain.save(key: Self.secretKeychainKey, value: text1)
+        let success2 = keychain.save(key: Self.accessKeychainKey, value: text2)
 
         saveResultMessage = (success1 && success2)
             ? "Ключи сохранены в Keychain"
@@ -60,8 +64,8 @@ class ScanViewModel: ObservableObject {
 
     /// Удаляет ключи из Keychain — API вернётся к ключам из Config.plist
     func deleteData() {
-        KeychainManager.shared.delete(key: Self.secretKeychainKey)
-        KeychainManager.shared.delete(key: Self.accessKeychainKey)
+        keychain.delete(key: Self.secretKeychainKey)
+        keychain.delete(key: Self.accessKeychainKey)
         text1 = ""
         text2 = ""
         saveResultMessage = "Ключи удалены, используются ключи из Config.plist"

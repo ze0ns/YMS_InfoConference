@@ -12,12 +12,12 @@ import Foundation
 // MARK: - WeatherModel
 struct WeatherData: Codable {
     let latitude: Double
-    let longitude: Int
+    let longitude: Double
     let generationtimeMS: Double
     let utcOffsetSeconds: Int
     let timezone: String
     let timezoneAbbreviation: String
-    let elevation: Int
+    let elevation: Double
     let currentUnits: CurrentUnits
     let current: Current
     let dailyUnits: DailyUnits

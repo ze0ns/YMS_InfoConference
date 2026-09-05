@@ -25,12 +25,15 @@ struct APIConfig {
 
     // MARK: - Актуальные ключи: Keychain имеет приоритет над Config.plist
 
+    /// Инжектируемое хранилище ключей (по умолчанию — Keychain). Позволяет подменять в тестах.
+    static var keychain: KeychainService = KeychainManager.shared
+
     /// Ключи, отсканированные и сохранённые в Keychain (nil — если их там нет)
     static var keychainSecretKey: String? {
-        KeychainManager.shared.load(key: ScanViewModel.secretKeychainKey)
+        keychain.load(key: ScanViewModel.secretKeychainKey)
     }
     static var keychainAccessKey: String? {
-        KeychainManager.shared.load(key: ScanViewModel.accessKeychainKey)
+        keychain.load(key: ScanViewModel.accessKeychainKey)
     }
 
     /// Используются ли в данный момент ключи из Keychain

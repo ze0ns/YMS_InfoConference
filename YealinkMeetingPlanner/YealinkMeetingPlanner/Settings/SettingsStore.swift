@@ -35,19 +35,25 @@ class SettingsStore {
     private static let pinKeychainKey = "settings_access_pin"
     private static let cityDefaultsKey = "settings_selected_city_id"
 
+    private let keychain: KeychainService
+    private let storage: DataStorage
+
     /// Пин-код доступа к настройкам (по умолчанию "0000")
     private(set) var pin: String
 
     /// Выбранный город
     var selectedCity: City {
-        didSet { UserDefaults.standard.set(selectedCity.id, forKey: Self.cityDefaultsKey) }
+        didSet { storage.set(selectedCity.id, forKey: Self.cityDefaultsKey) }
     }
 
-    private init() {
-        // Пин-код хранится в Keychain; если не задан — используем "0000"
-        pin = KeychainManager.shared.load(key: Self.pinKeychainKey) ?? "0000"
+    init(keychain: KeychainService? = nil, storage: DataStorage? = nil) {
+        self.keychain = keychain ?? KeychainManager.shared
+        self.storage = storage ?? UserDefaults.standard
 
-        let savedCityId = UserDefaults.standard.string(forKey: Self.cityDefaultsKey)
+        // Пин-код хранится в Keychain; если не задан — используем "0000"
+        pin = self.keychain.load(key: Self.pinKeychainKey) ?? "0000"
+
+        let savedCityId = self.storage.string(forKey: Self.cityDefaultsKey)
         selectedCity = CityCatalog.cities.first { $0.id == savedCityId }
             ?? CityCatalog.cities[0]
     }
@@ -56,7 +62,7 @@ class SettingsStore {
     @discardableResult
     func changePin(to newPin: String) -> Bool {
         guard newPin.count == 4, newPin.allSatisfy(\.isNumber) else { return false }
-        let saved = KeychainManager.shared.save(key: Self.pinKeychainKey, value: newPin)
+        let saved = keychain.save(key: Self.pinKeychainKey, value: newPin)
         if saved {
             pin = newPin
         }

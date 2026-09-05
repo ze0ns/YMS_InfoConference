@@ -9,10 +9,20 @@
 import Foundation
 import Security
 
-class KeychainManager {
+// MARK: - Протокол хранилища ключей (DIP: потребители зависят от абстракции)
+
+protocol KeychainService {
+    @discardableResult
+    func save(key: String, value: String) -> Bool
+    func load(key: String) -> String?
+    func delete(key: String)
+}
+
+class KeychainManager: KeychainService {
     static let shared = KeychainManager()
-    
+
     // Сохранение секретных данных
+    @discardableResult
     func save(key: String, value: String) -> Bool {
         guard let data = value.data(using: .utf8) else { return false }
         

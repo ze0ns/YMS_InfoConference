@@ -81,7 +81,7 @@ struct ScheduleView: View {
                 }
             }
             .frame(maxHeight: .infinity)
-            .background(busyBlockColor(for: block))
+            .background(ScheduleSlotFormatter.tone(for: block, now: Date()).color)
             .cornerRadius(8)
         }
     }
@@ -108,6 +108,19 @@ struct ScheduleView: View {
 
 // MARK: - Форматтер даты и цвета
 
+// MARK: - Тон занятого блока → цвет (OCP: расширение вместо switch во View)
+
+extension ScheduleBlockTone {
+    var color: Color {
+        switch self {
+        case .endingSoon:  return .orange.opacity(0.25)
+        case .endingLater: return .red.opacity(0.4)
+        case .active:      return .pink.opacity(0.2)
+        case .inactive:    return .green.opacity(0.15)
+        }
+    }
+}
+
 extension ScheduleView {
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -118,15 +131,6 @@ extension ScheduleView {
 
     private func formattedDate(_ date: Date) -> String {
         Self.dateFormatter.string(from: date)
-    }
-
-    private func busyBlockColor(for block: ScheduleBlock) -> Color {
-        switch ScheduleSlotFormatter.tone(for: block, now: Date()) {
-        case .endingSoon:  return .orange.opacity(0.25)
-        case .endingLater: return .red.opacity(0.4)
-        case .active:      return .pink.opacity(0.2)
-        case .inactive:    return .green.opacity(0.15)
-        }
     }
 }
 
