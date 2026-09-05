@@ -1,12 +1,12 @@
 // This file was generated from JSON Schema using quicktype, do not modify it directly.
 // To parse the JSON, add this file to your project and do:
 //
-//   let conferenseSheduler = try? JSONDecoder().decode(ConferenseSheduler.self, from: jsonData)
+//   let conferenceScheduler = try? JSONDecoder().decode(ConferenceScheduler.self, from: jsonData)
 
 import Foundation
 
-// MARK: - ConferenseSheduler
-struct ConferenseSheduler: Codable {
+// MARK: - ConferenceScheduler
+struct ConferenceScheduler: Codable {
     let ret: Int
     let data: DataClass
     let error: JSONNull?

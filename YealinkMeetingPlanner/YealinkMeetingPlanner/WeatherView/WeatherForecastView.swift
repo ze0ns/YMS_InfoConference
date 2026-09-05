@@ -57,7 +57,7 @@ struct WeatherForecastView: View {
 
     @ViewBuilder
     private func weatherContent(data: WeatherData) -> some View {
-        HStack(spacing: 26) {
+        HStack(spacing: LayoutDimensions.weatherContentSpacing) {
             currentWeatherView(data: data)
 
             Divider()
@@ -76,7 +76,7 @@ struct WeatherForecastView: View {
             Image(systemName: WeatherViewModel.weatherIconName(for: data.current.weatherCode))
                 .resizable()
                 .scaledToFit()
-                .frame(width: 60, height: 60)
+                .frame(width: LayoutDimensions.weatherCurrentIconSize, height: LayoutDimensions.weatherCurrentIconSize)
                 .symbolRenderingMode(.multicolor)
                 .padding(.trailing, 20)
 
@@ -110,13 +110,13 @@ struct WeatherForecastView: View {
 
     @ViewBuilder
     private func dailyForecastView(data: WeatherData) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: LayoutDimensions.weatherDailyDividerSpacing) {
             let daysToShow = min(3, data.daily.time.count)
 
             ForEach(0..<daysToShow, id: \.self) { (idx: Int) in
                 VStack {
                     Text(weatherViewModel.formatDate(data.daily.time[idx]))
-                        .frame(width: 80, alignment: .leading)
+                        .frame(width: LayoutDimensions.weatherDailyDayWidth, alignment: .leading)
                         .foregroundColor(.white)
 
                     Image(systemName: WeatherViewModel.weatherIconName(for: data.daily.weatherCode[idx]))
@@ -124,7 +124,7 @@ struct WeatherForecastView: View {
                         .font(.title)
 
                     Text("\(Int(data.daily.temperature2MMax[idx]))°C / \(Int(data.daily.temperature2MMin[idx]))°C")
-                        .frame(width: 100, alignment: .leading)
+                        .frame(width: LayoutDimensions.weatherDailyTempWidth, alignment: .leading)
                         .foregroundColor(.white)
 
                     HStack(spacing: 12) {
