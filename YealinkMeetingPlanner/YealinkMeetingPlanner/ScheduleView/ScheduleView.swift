@@ -17,7 +17,7 @@ struct ScheduleView: View {
                 .font(.headline)
                 .foregroundColor(.white)
 
-            Text(formattedDate(currentDate))
+            Text(DateFormatters.ruFullDate.string(from: currentDate))
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.6))
                 .bold()
@@ -118,19 +118,6 @@ extension ScheduleBlockTone {
         case .active:      return .pink.opacity(0.2)
         case .inactive:    return .green.opacity(0.15)
         }
-    }
-}
-
-extension ScheduleView {
-    private static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
-        formatter.dateFormat = "dd MMMM yyyy"
-        return formatter
-    }()
-
-    private func formattedDate(_ date: Date) -> String {
-        Self.dateFormatter.string(from: date)
     }
 }
 

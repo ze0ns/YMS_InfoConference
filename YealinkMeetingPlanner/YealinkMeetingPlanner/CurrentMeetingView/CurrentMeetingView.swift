@@ -40,19 +40,18 @@ struct CurrentMeetingView: View {
             ZStack {
                 // Фоновый круг с эффектом свечения
                 Circle()
-                    .fill(statusColor) // Цвет круга (зеленый или красный)
-                    .frame(width: 130, height: 130) // Размер круга
-                    // Двойной shadow для более красивого и плотного свечения (Glow)
+                    .fill(statusColor)
+                    .frame(width: LayoutDimensions.meetingCircleSize, height: LayoutDimensions.meetingCircleSize)
                     .shadow(color: statusColor.opacity(0.6), radius: 10, x: 0, y: 0)
                     .shadow(color: statusColor.opacity(0.3), radius: 20, x: 0, y: 0)
                 
                 // Изображение поверх круга
-                Image(.metting)
+                Image(.meeting)
                     .resizable()
                     .renderingMode(.template)
                     .scaledToFit()
                     .foregroundColor(.white)
-                    .frame(width: 130, height: 130)
+                    .frame(width: LayoutDimensions.meetingCircleSize, height: LayoutDimensions.meetingCircleSize)
 
             }
             // 🔽 КОНЕЦ БЛОКА 🔽
@@ -69,7 +68,7 @@ struct CurrentMeetingView: View {
                         .renderingMode(.template)
                         .scaledToFit()
                         .foregroundColor(.green)
-                        .frame(width: 30, height: 30)
+                        .frame(width: LayoutDimensions.meetingRowIconSize, height: LayoutDimensions.meetingRowIconSize)
                     Text("Время")
                         .font(.subheadline)
                         .foregroundColor(.white)
@@ -78,14 +77,14 @@ struct CurrentMeetingView: View {
                         .font(.subheadline)
                         .foregroundColor(.white)
                 }
-                .padding(.horizontal, 60)
+                .padding(.horizontal, LayoutDimensions.meetingRowHorizontalPadding)
                 HStack(alignment: .center){
                     Image(systemName: "person.circle")
                         .resizable()
                         .renderingMode(.template)
                         .scaledToFit()
                         .foregroundColor(.green)
-                        .frame(width: 30, height: 30)
+                        .frame(width: LayoutDimensions.meetingRowIconSize, height: LayoutDimensions.meetingRowIconSize)
                     Text("Контакт")
                         .font(.subheadline)
                         .foregroundColor(.white)
@@ -94,14 +93,14 @@ struct CurrentMeetingView: View {
                         .font(.subheadline)
                         .foregroundColor(.white)
                 }
-                .padding(.horizontal, 60)
+                .padding(.horizontal, LayoutDimensions.meetingRowHorizontalPadding)
                 HStack(alignment: .center){
                     Image(systemName: "phone")
                         .resizable()
                         .renderingMode(.template)
                         .scaledToFit()
                         .foregroundColor(.green)
-                        .frame(width: 30, height: 30)
+                        .frame(width: LayoutDimensions.meetingRowIconSize, height: LayoutDimensions.meetingRowIconSize)
                     Text("Телефон")
                         .font(.subheadline)
                         .foregroundColor(.white)
@@ -111,7 +110,7 @@ struct CurrentMeetingView: View {
                         .font(.subheadline)
                         .foregroundColor(.white)
                 }
-                .padding(.horizontal, 60)
+                .padding(.horizontal, LayoutDimensions.meetingRowHorizontalPadding)
             }
             .padding()
             .cornerRadius(12)

@@ -12,7 +12,7 @@ struct HeaderView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(.metting)
+            Image(.meeting)
             VStack(alignment: .leading) {
                 Text(roomName)
                     .font(.largeTitle)

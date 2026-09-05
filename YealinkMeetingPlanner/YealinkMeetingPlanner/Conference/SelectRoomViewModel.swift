@@ -58,7 +58,7 @@ class SelectRoomViewModel: ObservableObject {
             let fetchedRooms = response.data.data
 
             // 2. Удаляем старые записи из базы
-            try clearRoomsInternal(modelContext)
+            try modelContext.deleteAll(of: RoomModel.self)
 
             // 3. Маппим и сохраняем новые данные
             for roomData in fetchedRooms {
@@ -82,15 +82,5 @@ class SelectRoomViewModel: ObservableObject {
         }
 
         isLoading = false
-    }
-
-    // MARK: - Работа с базой данных (SwiftData)
-
-    private func clearRoomsInternal(_ modelContext: ModelContext) throws {
-        let descriptor = FetchDescriptor<RoomModel>()
-        let oldRooms = try modelContext.fetch(descriptor)
-        for oldRoom in oldRooms {
-            modelContext.delete(oldRoom)
-        }
     }
 }

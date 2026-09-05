@@ -11,7 +11,7 @@ import os
 // MARK: - Протокол сервиса (позволяет подменять реализацию в тестах)
 
 protocol YmsApiService {
-    func getConferenceSchedule(roomId: String) async throws -> ConferenseSheduler
+    func getConferenceSchedule(roomId: String) async throws -> ConferenceScheduler
     func getRooms() async throws -> RoomList
 }
 
@@ -47,7 +47,7 @@ struct RoomListRequest: Encodable {
 
 struct YmsApiResponse: YmsApiService {
 
-    func getConferenceSchedule(roomId: String) async throws -> ConferenseSheduler {
+    func getConferenceSchedule(roomId: String) async throws -> ConferenceScheduler {
         try await post(
             path: "api/open/v1/conference/record/\(roomId)/pagedList",
             body: ConferenceScheduleRequest()

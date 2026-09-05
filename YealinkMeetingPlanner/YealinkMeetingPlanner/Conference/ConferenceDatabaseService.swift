@@ -13,7 +13,7 @@ import Foundation
 @MainActor
 protocol ConferenceRepository {
     func loadConferences() throws -> [ConfDataModel]
-    func replaceAll(with schedule: ConferenseSheduler) throws
+    func replaceAll(with schedule: ConferenceScheduler) throws
     func clearAll() throws
 }
 
@@ -33,7 +33,7 @@ final class SwiftDataConferenceRepository: ConferenceRepository {
         )
     }
 
-    func replaceAll(with schedule: ConferenseSheduler) throws {
+    func replaceAll(with schedule: ConferenceScheduler) throws {
         try clearAll()
 
         for info in schedule.data.data {
@@ -56,9 +56,6 @@ final class SwiftDataConferenceRepository: ConferenceRepository {
     }
 
     func clearAll() throws {
-        let descriptor = FetchDescriptor<ConfDataModel>()
-        for item in try modelContext.fetch(descriptor) {
-            modelContext.delete(item)
-        }
+        try modelContext.deleteAll(of: ConfDataModel.self)
     }
 }

@@ -22,20 +22,20 @@ struct ConferenceRoomScreen: View {
     var body: some View {
         GeometryReader { geometry in
             let screenWidth = geometry.size.width
-            let meetingCardWidth = (screenWidth - 32) * 0.7
-            let weatherCardHeight = geometry.size.height * 0.15
+            let meetingCardWidth = (screenWidth - LayoutDimensions.meetingCardWidthInset) * LayoutDimensions.meetingCardWidthFactor
+            let weatherCardHeight = geometry.size.height * LayoutDimensions.weatherCardHeightFactor
 
             VStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: LayoutDimensions.headerToContentSpacing) {
                     HeaderView(roomName: appState.selectedRoom?.namePinyin ?? "Выберите комнату")
                         .cardStyle()
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, LayoutDimensions.screenHorizontalPadding)
 
-                    HStack(alignment: .top, spacing: 20) {
+                    HStack(alignment: .top, spacing: LayoutDimensions.mainColumnsSpacing) {
                         currentMeetingView(width: meetingCardWidth)
                         scheduleView()
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, LayoutDimensions.screenHorizontalPadding)
                 }
 
                 Spacer()
@@ -43,10 +43,10 @@ struct ConferenceRoomScreen: View {
                 WeatherForecastView()
                     .frame(maxWidth: .infinity)
                     .frame(height: weatherCardHeight)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, LayoutDimensions.weatherCardBottomPadding)
                     .cardStyle()
-                    .padding(.top, 20)
-                    .padding(.horizontal, 20)
+                    .padding(.top, LayoutDimensions.weatherCardTopPadding)
+                    .padding(.horizontal, LayoutDimensions.screenHorizontalPadding)
             }
             .background(Color.BG)
             .overlay(alignment: .bottomTrailing) {
@@ -54,13 +54,13 @@ struct ConferenceRoomScreen: View {
                     Image(systemName: "gearshape")
                         .font(.title2)
                         .foregroundColor(.black)
-                        .frame(width: 40, height: 40)
+                        .frame(width: LayoutDimensions.settingsButtonSize, height: LayoutDimensions.settingsButtonSize)
                         .background(Color(.systemGray6))
                         .clipShape(Circle())
                         .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
                 }
-                .padding(.trailing, 30)
-                .padding(.bottom, 10)
+                .padding(.trailing, LayoutDimensions.settingsButtonTrailing)
+                .padding(.bottom, LayoutDimensions.settingsButtonBottom)
             }
             .sheet(isPresented: $isPinEntryPresented) {
                 PinEntryView {

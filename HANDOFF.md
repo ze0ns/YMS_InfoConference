@@ -1,8 +1,8 @@
 # Handoff — YMS_InfoConference / YealinkMeetingPlanner
 
 **Created:** 2026-09-05
-**Updated:** 2026-09-05 (Phases 1-3 done + QRScanner blocker fixed)
-**Status:** 🟡 Phases 1-3 done, Phases 4-5 pending. ✅ App compiles (build succeeded)
+**Updated:** 2026-09-05 (Phases 1-4 done + QRScanner blocker fixed)
+**Status:** 🟢 Phases 1-4 done, Phase 5 pending. ✅ App compiles (build succeeded)
 
 ---
 
@@ -20,7 +20,7 @@ Refactor the **YealinkMeetingPlanner** SwiftUI app to fix critical architecture 
   - 1.2 Replaced `@StateObject` with `@ObservedObject` (VM ownership hoisted to `YealinkMeetingPlannerApp` via `@StateObject` — now a single stable instance)
   - 1.3 Added `deinit` Timer cancellation in `ConferenceViewModel` (clears `cancellables`) and `HeaderViewModel` (cancels `cancellable`)
   - 1.4 Replaced `try!` with `try?`/guard in previews of `ConferenceRoomScreen` and `SelectRoomView` (uses `AnyView` fallback)
-- ❌ Phases 4-5 pending
+- ❌ Phase 5 pending
 - ✅ **Phase 2 complete** (business logic moved into ViewModels): `MeetingDisplayState`/`currentMeetingDisplay` + `busySlots` in `ConferenceViewModel`; date formatting moved into `WeatherViewModel`; icon mapping already centralised
 - ✅ **Phase 3 complete** (SOLID):
   - 3.1.1 `KeychainService` protocol added (in `KeychainManager.swift`); `KeychainManager` conforms. Injected into `ScanViewModel`, `SettingsStore`, `APIConfig` (`static var keychain`, test-stubbable)
@@ -30,6 +30,13 @@ Refactor the **YealinkMeetingPlanner** SwiftUI app to fix critical architecture 
   - 3.3.1 `weatherIconName` → `Dictionary<Int, String>` (default `questionmark.circle.fill`)
   - 3.3.2 `busyBlockColor` removed from View; `extension ScheduleBlockTone { var color: Color }` in `ScheduleView.swift`
   - Verified: `BUILD SUCCEEDED`, no new warnings
+- ✅ **Phase 4 complete** (Clean Code):
+  - 4.1 Typos fixed: `ConferenseSheduler` → `ConferenceScheduler` (file `Model/ConferenceScheduler.swift` + protocol/impl in `YmsApiResponse.swift`/`ConferenceDatabaseService.swift`); folder `WetherView` → `WeatherView` (PBX auto-sync, no pbxproj edits); asset `MettingImage.imageset` → `MeetingImage.imageset`, `Image(.metting)` → `Image(.meeting)` (CurrentMeetingView, HeaderView)
+  - 4.2 Dead code removed: `LocalData/MockData.swift` (all-commented file + empty dir) deleted; `Model/CodeNDecode.swift` trimmed from 249 → ~40 lines — unused `JSONAny`/`JSONCodingKey` removed, only used `JSONNull` kept (DTOs) with deprecated `hashValue` → `hash(into:)`
+  - 4.3 Deduplication: `Helpers/TimeUtils.swift` (single `minutes(of:)` source; `ScheduleSlotFormatter` delegates to it); `Helpers/DateFormatters.swift` (shared `ruFullDate`/`timeHM`/`isoDate`/`shortWeekdayDay` — used by HeaderViewModel, ScheduleView, WeatherViewModel); `Helpers/ModelContext+DeleteAll.swift` (`ModelContext.deleteAll(of:)` generic replaces `SwiftDataConferenceRepository.clearAll()` body and `SelectRoomViewModel.clearRoomsInternal`)
+  - 4.4 `Helpers/LayoutDimensions.swift` enum for magic numbers in `ConferenceRoomScreen` (paddings/spacings/card factors/settings button), `CurrentMeetingView` (circle/icon/row padding), `WeatherForecastView` (icon/column widths)
+  - Bugfix with Phase 4: `WeatherData.longitude`/`elevation` were `Int` but Open-Meteo returns fractional values (Moscow `37.625`, SPb `30.303894`, Kazan `49.125`) → decode crashed for non-Krasnodar cities (`decodingFailed` «Не удалось разобрать ответ сервера»). Changed both to `Double` in `WeatherModel.swift`
+  - Verified: `BUILD SUCCEEDED`, no new warnings (pre-existing warnings only: ConfDataModel accessor macro on `let`, UIScreen.main deprecations)
 
 ### ✅ QRScanner build blocker (fixed)
 A previous incomplete change rewrote `QRScannerOverlayView.swift` as a SwiftUI `View`, but `QRScannerViewController` still treated it as a `UIView` → ~10 compile errors.
@@ -57,28 +64,26 @@ A previous incomplete change rewrote `QRScannerOverlayView.swift` as a SwiftUI `
 - **All ViewModels** — `@StateObject` used for injected VMs (excess overhead when not owning lifecycle) — see Phase 5 (`@Observable` migration)
 - **Timer management** — no cancellation in `deinit` or Combine sink storage (memory leak risk)
 - **`try!` usage** — force-try in `ConferenceRoomScreen:150` and `SelectRoomView:71`
-- **Typos in names** — `ConferenseSheduler`, `WetherView`, `metting` asset
-- **Dead code** — `MockData.swift` (all commented out), `CodeNDecode.swift` (249 lines of unused `JSONAny`)
-- **Magic numbers** — hardcoded layout dimensions scattered across Views
+- **Typos in names** — ✅ fixed (Phase 4): `ConferenseSheduler` → `ConferenceScheduler`, `WetherView` → `WeatherView`, `metting` → `meeting`
+- **Dead code** — ✅ fixed (Phase 4): `MockData.swift` deleted, `JSONAny` removed from `CodeNDecode.swift`
+- **Magic numbers** — ✅ fixed (Phase 4): extracted to `LayoutDimensions` enum in main screens
+- **Weather decode bug** — ✅ fixed (Phase 4): `WeatherData.longitude`/`elevation` `Int` → `Double` (Open-Meteo returns fractional values for most cities)
 
 ---
 
 ## Next Steps (Recommended Order)
 
-### Phase 4: Clean Code
-1. Fix typos: `ConferenseSheduler` → `ConferenceScheduler`, `WetherView` → `WeatherView`, `metting` → `meeting`
-2. Delete `MockData.swift` and dead code from `CodeNDecode.swift`
-3. Deduplicate: `timeToMinutes`, `DateFormatter`, `clearDataInternal`
-4. Extract magic numbers into named constants (`LayoutDimensions` enum)
-
 ### Phase 5: Modernize patterns
-5. Migrate all ViewModels from `ObservableObject`/`@Published`/Combine to `@Observable` (note: `AppState`, `SettingsStore` already `@Observable`)
-6. Add doc-comments for public APIs
+1. Migrate all ViewModels from `ObservableObject`/`@Published`/Combine to `@Observable` (note: `AppState`, `SettingsStore` already `@Observable`)
+2. Add doc-comments for public APIs
 
-### Extras discovered during Phase 3 (optional)
+### Extras discovered during Phase 4 (optional)
 - `SelectRoomViewModel` still uses `ModelContext` directly — could get a `RoomRepository` later
 - `ZmsApiService`/`YmsApiResponse` signing reads keys via `APIConfig.keychain` (stubbable) — ok
 - `ScanViewModel` uses `@StateObject` in `ScannerView` but never re-injected — Phase 5 candidate
+- `scanRectSize: CGFloat = 260` duplicated in `QRScannerViewController`/`QRScannerOverlayView` — consider a shared constant
+- `ScheduleSlotFormatter.timeSlots()` hardcodes 7:00–20:00/30-min step — could move to constants
+- Unit tests still absent — `ConferenceTimeCalculator`/`ScheduleSlotFormatter`/`TimeUtils` are the clean testable core
 
 ---
 
@@ -93,17 +98,22 @@ A previous incomplete change rewrote `QRScannerOverlayView.swift` as a SwiftUI `
 | `Conference/ConferenceTimeCalculator.swift` | ✅ NEW Phase 3 | Pure logic + `MeetingDisplayState`/`MeetingCardInfo` |
 | `Header/HeaderViewModel.swift` | ✅ Phase 1 | deinit added |
 | `YealinkMeetingPlannerApp.swift` | ✅ Phase 1 | VM ownership hoisted via @StateObject; container created in init |
-| `WetherView/WeatherViewModel.swift` | ✅ Phases 2-3 | +`formatDate`; `weatherIconName` via dictionary; `DataStorage` injected |
-| `WetherView/WeatherForecastView.swift` | ✅ Phase 2 | Uses `weatherViewModel.formatDate`; no local formatters |
+| `WeatherView/WeatherViewModel.swift` | ✅ Phases 2-4 | moved to `WeatherView/` folder; uses `DateFormatters.isoDate`/`shortWeekdayDay` |
+| `WeatherView/WeatherForecastView.swift` | ✅ Phases 2-4 | moved to `WeatherView/`; `LayoutDimensions` values |
 | `Helpers/DataStorage.swift` | ✅ NEW Phase 3 | `DataStorage` protocol; `UserDefaults` conforms |
+| `Helpers/TimeUtils.swift` | ✅ NEW Phase 4 | single `minutes(of:)` source; `ScheduleSlotFormatter` delegates |
+| `Helpers/DateFormatters.swift` | ✅ NEW Phase 4 | shared `DateFormatter`s (ruFullDate/timeHM/isoDate/shortWeekdayDay) |
+| `Helpers/ModelContext+DeleteAll.swift` | ✅ NEW Phase 4 | generic `deleteAll(of:)` replaces clearXInternal |
+| `Helpers/LayoutDimensions.swift` | ✅ NEW Phase 4 | named layout constants (magic numbers removed) |
+| `Model/WeatherModel.swift` | ✅ Fix Phase 4 | `longitude`/`elevation` `Int` → `Double` (Open-Meteo fractional coords) |
 | `ScanSecretKey/KeychainManager.swift` | ✅ Phase 3 | `KeychainService` protocol + conformance |
 | `ScanSecretKey/ScanViewModel.swift` | ✅ Phase 3 | `KeychainService` injected |
 | `Settings/SettingsStore.swift` | ✅ Phase 3 | `KeychainService` + `DataStorage` injected |
 | `AppState.swift` | ✅ Phase 3 | `DataStorage` injected |
-| `ScheduleView/ScheduleView.swift` | ✅ Phase 3 | `ScheduleBlockTone.color` extension (OCP) |
-| `Model/ConferenceSheduler.swift` | — | Typo in filename (Phase 4) |
-| `LocalData/MockData.swift` | — | Dead code (Phase 4) |
-| `Model/CodeNDecode.swift` | — | Unused JSONAny code (Phase 4) |
+| `ScheduleView/ScheduleView.swift` | ✅ Phases 3-4 | `ScheduleBlockTone.color` extension (OCP); uses `DateFormatters.ruFullDate` |
+| `ScheduleView/ScheduleSlotFormatter.swift` | ✅ Phases 3-4 | delegates `minutes(of:)` to `TimeUtils` |
+| `Model/ConferenceScheduler.swift` | ✅ Phase 4 | renamed from `ConferenceSheduler.swift`; type `ConferenceScheduler` |
+| `Model/CodeNDecode.swift` | ✅ Phase 4 | trimmed to `JSONNull` only (unused `JSONAny`/`JSONCodingKey` removed) |
 | `ScanSecretKey/QRScannerViewController.swift` | ✅ Fixed | Hosts SwiftUI overlay via UIHostingController; app compiles |
 
 ---
@@ -115,7 +125,8 @@ A previous incomplete change rewrote `QRScannerOverlayView.swift` as a SwiftUI `
 - Build command: `xcodebuild -project YealinkMeetingPlanner.xcodeproj -scheme YealinkMeetingPlanner -destination 'platform=iOS Simulator,name=iPhone 17' build` — **passes now**
 - `scanRectSize: CGFloat = 260` is duplicated in `QRScannerViewController` and `QRScannerOverlayView` — must stay in sync (consider a shared constant later)
 - `ConferenceRoomScreen` previews return `AnyView` with `try? ModelContainer` — preserve this pattern in new previews
-- New files under `Conference/` and `Helpers/` are auto-included via `PBXFileSystemSynchronizedRootGroup` — no pbxproj edits needed
+- New files under `Conference/`, `Helpers/`, etc. are auto-included via `PBXFileSystemSynchronizedRootGroup` — no pbxproj edits needed (folder renamess like `WetherView`→`WeatherView` are just filesystem moves)
+- `WeatherData.longitude`/`elevation` must stay `Double` — Open-Meteo returns fractional coordinates (Moscow `37.625`); `Int` caused the «Не удалось разобрать ответ сервера» bug for most cities
 - `ConferenceDataFetcher` + `ConferenceDataFetcher`/repository/calculator are all `@MainActor` (ModelContext/@Model constraint); pure `ConferenceTimeCalculator` logic is the testable unit
 - `KeychainManager` has an empty `init()` now (was implicit); used by all `?? KeychainManager.shared` defaults
 - Russian-language commit messages throughout — code comments may be in Russian too
