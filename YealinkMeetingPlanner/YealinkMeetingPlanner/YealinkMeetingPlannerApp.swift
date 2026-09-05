@@ -10,29 +10,38 @@ import SwiftData
 
 @main
 struct YealinkMeetingPlannerApp: App {
-    @State private var appState = AppState()
+    @State private var appState: AppState
+    @StateObject private var conferenceViewModel: ConferenceViewModel
 
-    let sharedModelContainer: ModelContainer = {
+    private let sharedModelContainer: ModelContainer
+
+    init() {
         let schema = Schema([
             ConfDataModel.self,
             RoomModel.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            sharedModelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
-    }()
+
+        let state = AppState()
+        let modelContainer = sharedModelContainer
+        _appState = State(initialValue: state)
+        _conferenceViewModel = StateObject(
+            wrappedValue: ConferenceViewModel(
+                appState: state,
+                modelContext: modelContainer.mainContext
+            )
+        )
+    }
 
     var body: some Scene {
         WindowGroup {
-            ConferenceRoomScreen(
-                viewModel: ConferenceViewModel(
-                    appState: appState,
-                    modelContext: sharedModelContainer.mainContext
-                )
-            )
+            ConferenceRoomScreen(viewModel: conferenceViewModel)
         }
         .modelContainer(sharedModelContainer)
         .environment(appState)

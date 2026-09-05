@@ -68,15 +68,20 @@ struct SelectRoomView: View {
 // MARK: - Preview
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: RoomModel.self, configurations: config)
+
+    guard let container = try? ModelContainer(for: RoomModel.self, configurations: config) else {
+        return AnyView(Text("Ошибка создания ModelContainer"))
+    }
 
     let context = container.mainContext
     context.insert(RoomModel(id: "1", namePinyin: "Комната А"))
     context.insert(RoomModel(id: "2", namePinyin: "Зал Б"))
 
-    return NavigationStack {
-        SelectRoomView()
-            .modelContainer(container)
-            .environment(AppState())
-    }
+    return AnyView(
+        NavigationStack {
+            SelectRoomView()
+                .modelContainer(container)
+                .environment(AppState())
+        }
+    )
 }

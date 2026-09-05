@@ -29,6 +29,10 @@ class ConferenceViewModel: ObservableObject {
         self.modelContext = modelContext
     }
 
+    deinit {
+        cancellables.removeAll()
+    }
+
     // MARK: - Жизненный цикл
 
     /// Загрузить кэш из базы и запустить периодическое обновление.

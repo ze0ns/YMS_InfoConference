@@ -11,15 +11,12 @@ struct ConferenceRoomScreen: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
 
-    @Query(sort: \ConfDataModel.startDateTimeStamp, order: .forward)
-    private var conferences: [ConfDataModel]
-
-    @StateObject private var viewModel: ConferenceViewModel
+    @ObservedObject private var viewModel: ConferenceViewModel
     @State private var isPinEntryPresented = false
     @State private var isSettingsPresented = false
 
     init(viewModel: ConferenceViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -111,7 +108,7 @@ struct ConferenceRoomScreen: View {
             .cardStyle()
         } else {
             CurrentMeetingView(
-                title: conferences.isEmpty ? "Нет запланированных встреч" : "Комната свободна",
+                title: viewModel.confDataItems.isEmpty ? "Нет запланированных встреч" : "Комната свободна",
                 time: "",
                 contactName: "",
                 contactPhone: "",
@@ -125,7 +122,7 @@ struct ConferenceRoomScreen: View {
 
     @ViewBuilder
     private func scheduleView() -> some View {
-        let slots = conferences.map { meeting in
+        let slots = viewModel.confDataItems.map { meeting in
             BusySlot(
                 title: meeting.conferenceSubject,
                 start: meeting.startTime,
@@ -147,15 +144,24 @@ struct ConferenceRoomScreen_Previews: PreviewProvider {
     static var previews: some View {
         let appState = AppState()
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try! ModelContainer(for: ConfDataModel.self, RoomModel.self, configurations: config)
 
-        return ConferenceRoomScreen(
-            viewModel: ConferenceViewModel(
-                appState: appState,
-                modelContext: container.mainContext
+        guard let container = try? ModelContainer(
+            for: ConfDataModel.self,
+            RoomModel.self,
+            configurations: config
+        ) else {
+            return AnyView(Text("Ошибка создания ModelContainer"))
+        }
+
+        return AnyView(
+            ConferenceRoomScreen(
+                viewModel: ConferenceViewModel(
+                    appState: appState,
+                    modelContext: container.mainContext
+                )
             )
+            .modelContainer(container)
+            .environment(appState)
         )
-        .modelContainer(container)
-        .environment(appState)
     }
 }

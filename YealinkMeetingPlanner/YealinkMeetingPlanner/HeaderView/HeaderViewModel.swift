@@ -35,6 +35,10 @@ final class HeaderViewModel: ObservableObject {
             }
     }
 
+    deinit {
+        cancellable?.cancel()
+    }
+
     func dateString(from date: Date) -> String {
         Self.dateFormatter.string(from: date)
     }
