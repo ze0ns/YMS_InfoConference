@@ -7,9 +7,10 @@
 
 
 import Foundation
-import Combine
+import Observation
 
-class ScanViewModel: ObservableObject {
+@Observable
+final class ScanViewModel {
     // Ключи хранения в Keychain (используются также в APIConfig для запросов к API)
     static let secretKeychainKey = "yl_secret_key"
     static let accessKeychainKey = "yl_access_key"
@@ -17,15 +18,15 @@ class ScanViewModel: ObservableObject {
     private let keychain: KeychainService
 
     // Состояние полей ввода
-    @Published var text1: String = ""
-    @Published var text2: String = ""
+    var text1: String = ""
+    var text2: String = ""
 
     // Сообщение о результате сохранения
-    @Published var saveResultMessage: String?
+    var saveResultMessage: String?
 
     // Состояние сканера
-    @Published var isScannerPresented: Bool = false
-    @Published var activeScannerField: Int = 1 // 1 или 2, чтобы знать, куда сохранить результат
+    var isScannerPresented: Bool = false
+    var activeScannerField: Int = 1 // 1 или 2, чтобы знать, куда сохранить результат
 
     // Валидация: кнопка "Сохранить" активна только если оба поля заполнены
     var isSaveEnabled: Bool {
@@ -40,11 +41,13 @@ class ScanViewModel: ObservableObject {
         text2 = self.keychain.load(key: Self.accessKeychainKey) ?? ""
     }
     
+    /// Открывает сканер для указанного поля (1 — секретный ключ, 2 — ключ доступа).
     func openScanner(for field: Int) {
         activeScannerField = field
         isScannerPresented = true
     }
     
+    /// Записывает распознанный текст в активное поле ввода.
     func handleScannedText(_ text: String) {
         if activeScannerField == 1 {
             text1 = text
@@ -53,6 +56,7 @@ class ScanViewModel: ObservableObject {
         }
     }
     
+    /// Сохраняет введённые ключи в Keychain и показывает результат.
     func saveData() {
         let success1 = keychain.save(key: Self.secretKeychainKey, value: text1)
         let success2 = keychain.save(key: Self.accessKeychainKey, value: text2)

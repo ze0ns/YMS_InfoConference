@@ -4,16 +4,17 @@
 //
 //  Created by Oschepkov Aleksandr on 16.08.2026.
 //
-import SwiftUI
+import Foundation
 import SwiftData
-import Combine
+import Observation
 import os
 
 @MainActor
-class SelectRoomViewModel: ObservableObject {
-    @Published var rooms: [RoomModel] = []
-    @Published var errorMessage: String? = nil
-    @Published var isLoading = false
+@Observable
+final class SelectRoomViewModel {
+    var rooms: [RoomModel] = []
+    var errorMessage: String? = nil
+    var isLoading = false
 
     private let api: YmsApiService
     private var modelContext: ModelContext?
@@ -44,6 +45,7 @@ class SelectRoomViewModel: ObservableObject {
 
     // MARK: - Загрузка и сохранение комнат
 
+    /// Загружает комнаты из API, обновляет базу данных и отображаемый список.
     func fetchAndSaveRooms() async {
         guard let modelContext, let appState else {
             errorMessage = "Контекст базы данных не настроен"

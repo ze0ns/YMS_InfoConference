@@ -5,15 +5,16 @@
 //  Created by Oschepkov Aleksandr on 04.06.2026.
 //
 
-import SwiftUI
-import Combine
+import Foundation
+import Observation
 import os
 
 @MainActor
-class WeatherViewModel: ObservableObject {
-    @Published var weatherData: WeatherData?
-    @Published var isLoading = false
-    @Published var errorMessage: String?
+@Observable
+final class WeatherViewModel {
+    var weatherData: WeatherData?
+    var isLoading = false
+    var errorMessage: String?
 
     private let service: WeatherServiceProtocol
     private let settings: SettingsStore
@@ -74,6 +75,7 @@ class WeatherViewModel: ObservableObject {
         95: "cloud.bolt.fill"
     ]
 
+    /// SF Symbol для кода погоды WMO; fallback — «questionmark.circle.fill».
     static func weatherIconName(for code: Int) -> String {
         weatherIconNames[code] ?? "questionmark.circle.fill"
     }

@@ -5,19 +5,23 @@
 //  Created by Oschepkov Aleksandr on 06.06.2026.
 //
 import SwiftUI
-import Combine
 import SwiftData
 import os
 
 @MainActor
-class ConferenceViewModel: ObservableObject {
-    @Published private(set) var confDataItems: [ConfDataModel] = []
-    @Published var errorMessage: String? = nil
-    @Published var isLoading = false
+@Observable
+final class ConferenceViewModel {
+    private(set) var confDataItems: [ConfDataModel] = []
+    var errorMessage: String? = nil
+    var isLoading = false
+
+    private static let refreshInterval: TimeInterval = 60
 
     private let fetcher: ConferenceDataFetcher
     private let appState: AppState
-    private var cancellables = Set<AnyCancellable>()
+
+    @ObservationIgnored
+    nonisolated(unsafe) private var refreshTimer: Timer?
 
     /// ID выбранной комнаты — View использует его как .task(id:).
     var roomId: String? { appState.selectedRoom?.id }
@@ -34,7 +38,7 @@ class ConferenceViewModel: ObservableObject {
     }
 
     deinit {
-        cancellables.removeAll()
+        refreshTimer?.invalidate()
     }
 
     // MARK: - Жизненный цикл
@@ -43,12 +47,11 @@ class ConferenceViewModel: ObservableObject {
     func start() {
         loadCachedData()
 
-        Timer.publish(every: 60, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: Self.refreshInterval, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
                 self?.refreshSchedule()
             }
-            .store(in: &cancellables)
+        }
     }
 
     /// Полная загрузка расписания (вызывается из View через .task(id:)).
@@ -103,6 +106,7 @@ class ConferenceViewModel: ObservableObject {
 
     // MARK: - Работа с кэшем (SwiftData)
 
+    /// Загружает кэш расписания из базы.
     func loadCachedData() {
         do {
             confDataItems = try fetcher.loadCachedConferences()
@@ -111,6 +115,7 @@ class ConferenceViewModel: ObservableObject {
         }
     }
 
+    /// Очищает кэш расписания и текущие данные текущей комнаты.
     func clearData() {
         do {
             try fetcher.clearCache()

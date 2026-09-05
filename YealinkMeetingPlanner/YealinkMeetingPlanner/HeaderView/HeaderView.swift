@@ -8,7 +8,7 @@ import SwiftUI
 
 struct HeaderView: View {
     let roomName: String
-    @StateObject private var headerViewModel = HeaderViewModel()
+    @State private var headerViewModel = HeaderViewModel()
 
     var body: some View {
         HStack(spacing: 8) {

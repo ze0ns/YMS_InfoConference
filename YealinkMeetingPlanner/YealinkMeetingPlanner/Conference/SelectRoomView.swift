@@ -12,7 +12,7 @@ struct SelectRoomView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
 
-    @StateObject private var viewModel = SelectRoomViewModel()
+    @State private var viewModel = SelectRoomViewModel()
 
     var body: some View {
         VStack {

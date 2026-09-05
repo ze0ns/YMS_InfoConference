@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct WeatherForecastView: View {
-    @StateObject private var weatherViewModel = WeatherViewModel()
+    @State private var weatherViewModel = WeatherViewModel()
 
     var body: some View {
         ZStack {

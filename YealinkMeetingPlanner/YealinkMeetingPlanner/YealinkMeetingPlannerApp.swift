@@ -11,7 +11,7 @@ import SwiftData
 @main
 struct YealinkMeetingPlannerApp: App {
     @State private var appState: AppState
-    @StateObject private var conferenceViewModel: ConferenceViewModel
+    @State private var conferenceViewModel: ConferenceViewModel
 
     private let sharedModelContainer: ModelContainer
 
@@ -31,8 +31,8 @@ struct YealinkMeetingPlannerApp: App {
         let state = AppState()
         let modelContainer = sharedModelContainer
         _appState = State(initialValue: state)
-        _conferenceViewModel = StateObject(
-            wrappedValue: ConferenceViewModel(
+        _conferenceViewModel = State(
+            initialValue: ConferenceViewModel(
                 appState: state,
                 modelContext: modelContainer.mainContext
             )

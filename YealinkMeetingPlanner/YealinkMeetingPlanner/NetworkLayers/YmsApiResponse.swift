@@ -10,8 +10,11 @@ import os
 
 // MARK: - Протокол сервиса (позволяет подменять реализацию в тестах)
 
+/// Сервис YMS API: расписание конференций и список комнат.
 protocol YmsApiService {
+    /// Расписание конференций указанной комнаты.
     func getConferenceSchedule(roomId: String) async throws -> ConferenceScheduler
+    /// Список доступных комнат.
     func getRooms() async throws -> RoomList
 }
 

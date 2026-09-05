@@ -9,12 +9,14 @@
 import Foundation
 import Security
 
-// MARK: - Протокол хранилища ключей (DIP: потребители зависят от абстракции)
-
+/// Хранилище секретов (DIP: потребители зависят от абстракции).
 protocol KeychainService {
+    /// Сохраняет значение по ключу; возвращает true при успехе.
     @discardableResult
     func save(key: String, value: String) -> Bool
+    /// Читает значение по ключу.
     func load(key: String) -> String?
+    /// Удаляет значение по ключу.
     func delete(key: String)
 }
 

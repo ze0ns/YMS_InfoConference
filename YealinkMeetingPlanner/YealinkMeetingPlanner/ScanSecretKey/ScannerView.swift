@@ -3,18 +3,20 @@ import SwiftUI
 /// Экран ввода/сканирования ключей доступа к серверу (ylSecretKey, ylAccessKey).
 /// Ключи сохраняются в Keychain и используются в API вместо ключей из Config.plist.
 struct KeysScannerView: View {
-    @StateObject private var viewModel = ScanViewModel()
+    @State private var viewModel = ScanViewModel()
 
     var body: some View {
+        @Bindable var bindableViewModel = viewModel
+
         VStack(spacing: 24) {
 
             // Поле 1 — ylSecretKey
-            InputRow(title: "Секретный ключ (ylSecretKey)", text: $viewModel.text1) {
+            InputRow(title: "Секретный ключ (ylSecretKey)", text: $bindableViewModel.text1) {
                 viewModel.openScanner(for: 1)
             }
 
             // Поле 2 — ylAccessKey
-            InputRow(title: "Ключ доступа (ylAccessKey)", text: $viewModel.text2) {
+            InputRow(title: "Ключ доступа (ylAccessKey)", text: $bindableViewModel.text2) {
                 viewModel.openScanner(for: 2)
             }
 
@@ -47,7 +49,7 @@ struct KeysScannerView: View {
         .padding(.top, 20)
         .navigationTitle("Ключи доступа")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $viewModel.isScannerPresented) {
+        .sheet(isPresented: $bindableViewModel.isScannerPresented) {
             QRScannerView { scannedText in
                 viewModel.handleScannedText(scannedText)
             }

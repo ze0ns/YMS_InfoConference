@@ -8,7 +8,9 @@ import Foundation
 
 // MARK: - Протокол (для подмены в тестах)
 
+/// Сервис погоды.
 protocol WeatherServiceProtocol {
+    /// Загружает текущую погоду и прогноз для указанных координат.
     func fetchWeather(latitude: Double, longitude: Double) async throws -> WeatherData
 }
 

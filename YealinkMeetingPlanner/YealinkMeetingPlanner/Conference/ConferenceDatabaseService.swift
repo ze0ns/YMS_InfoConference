@@ -10,10 +10,14 @@ import Foundation
 
 // MARK: - Протокол репозитория расписания (DIP: вместо прямого ModelContext)
 
+/// Репозиторий расписания конференций (DIP: ViewModel не работает с ModelContext напрямую).
 @MainActor
 protocol ConferenceRepository {
+    /// Загружает все конференции, отсортированные по времени начала.
     func loadConferences() throws -> [ConfDataModel]
+    /// Заменяет всё содержимое расписанием из API.
     func replaceAll(with schedule: ConferenceScheduler) throws
+    /// Очищает кэш расписания.
     func clearAll() throws
 }
 

@@ -11,7 +11,7 @@ struct ConferenceRoomScreen: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
 
-    @ObservedObject private var viewModel: ConferenceViewModel
+    private let viewModel: ConferenceViewModel
     @State private var isPinEntryPresented = false
     @State private var isSettingsPresented = false
 
