@@ -115,7 +115,7 @@ struct WeatherForecastView: View {
 
             ForEach(0..<daysToShow, id: \.self) { (idx: Int) in
                 VStack {
-                    Text(formatDate(data.daily.time[idx]))
+                    Text(weatherViewModel.formatDate(data.daily.time[idx]))
                         .frame(width: 80, alignment: .leading)
                         .foregroundColor(.white)
 
@@ -145,29 +145,6 @@ struct WeatherForecastView: View {
         }
         .padding()
         .cornerRadius(12)
-    }
-
-    // MARK: - Вспомогательные функции
-
-    private static let inputDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter
-    }()
-
-    private static let outputDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
-        formatter.dateFormat = "EEE, d MMM"
-        return formatter
-    }()
-
-    private func formatDate(_ dateString: String) -> String {
-        if let date = Self.inputDateFormatter.date(from: dateString) {
-            return Self.outputDateFormatter.string(from: date)
-        }
-        return dateString
     }
 }
 

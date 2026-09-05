@@ -82,7 +82,36 @@ class ConferenceViewModel: ObservableObject {
 
     // MARK: - Текущая встреча
 
-    var currentMeeting: ConfDataModel? {
+    /// Готовые данные для карточки текущей встречи. View только отображает результат.
+    var currentMeetingDisplay: MeetingDisplayState {
+        guard appState.selectedRoom != nil else { return .noRoom }
+
+        guard let meeting = currentMeeting else {
+            return confDataItems.isEmpty ? .noMeetings : .free
+        }
+
+        return .occupied(
+            MeetingCardInfo(
+                title: meeting.conferenceSubject,
+                time: "\(meeting.startTime) – \(meeting.endTime)",
+                contactName: meeting.organizerName,
+                contactPhone: meeting.organizeExt
+            )
+        )
+    }
+
+    /// Занятые слоты расписания для отображения. View не маппит модели напрямую.
+    var busySlots: [BusySlot] {
+        confDataItems.map { meeting in
+            BusySlot(
+                title: meeting.conferenceSubject,
+                start: meeting.startTime,
+                end: meeting.endTime
+            )
+        }
+    }
+
+    private var currentMeeting: ConfDataModel? {
         let nowMinutes = Self.timeToMinutes(
             hours: Calendar.current.component(.hour, from: Date()),
             minutes: Calendar.current.component(.minute, from: Date())
@@ -166,4 +195,22 @@ class ConferenceViewModel: ObservableObject {
     private static func timeToMinutes(hours: Int, minutes: Int) -> Int {
         hours * 60 + minutes
     }
+}
+
+// MARK: - Состояние карточки текущей встречи
+
+/// Готовое состояние карточки для отображения. View не принимает решения о логике.
+enum MeetingDisplayState {
+    case noRoom
+    case occupied(MeetingCardInfo)
+    case free
+    case noMeetings
+}
+
+/// Отображаемые данные карточки занятой встречи.
+struct MeetingCardInfo {
+    let title: String
+    let time: String
+    let contactName: String
+    let contactPhone: String
 }

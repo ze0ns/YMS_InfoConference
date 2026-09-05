@@ -84,55 +84,36 @@ struct ConferenceRoomScreen: View {
 
     @ViewBuilder
     private func currentMeetingView(width: CGFloat) -> some View {
-        if appState.selectedRoom == nil {
-            CurrentMeetingView(
-                title: "Выберите комнату",
-                time: "",
-                contactName: "",
-                contactPhone: "",
-                status: .free
-            )
-            .frame(width: width)
-            .frame(maxHeight: .infinity)
-            .cardStyle()
-        } else if let meeting = viewModel.currentMeeting {
-            CurrentMeetingView(
-                title: meeting.conferenceSubject,
-                time: "\(meeting.startTime) – \(meeting.endTime)",
-                contactName: meeting.organizerName,
-                contactPhone: meeting.organizeExt,
-                status: .occupied
-            )
-            .frame(width: width)
-            .frame(maxHeight: .infinity)
-            .cardStyle()
-        } else {
-            CurrentMeetingView(
-                title: viewModel.confDataItems.isEmpty ? "Нет запланированных встреч" : "Комната свободна",
-                time: "",
-                contactName: "",
-                contactPhone: "",
-                status: .free
-            )
-            .frame(width: width)
-            .frame(maxHeight: .infinity)
-            .cardStyle()
-        }
+        let cardInfo: (title: String, time: String, contactName: String, contactPhone: String, status: RoomStatus) = {
+            switch viewModel.currentMeetingDisplay {
+            case .noRoom:
+                return ("Выберите комнату", "", "", "", .free)
+            case .occupied(let meeting):
+                return (meeting.title, meeting.time, meeting.contactName, meeting.contactPhone, .occupied)
+            case .free:
+                return ("Комната свободна", "", "", "", .free)
+            case .noMeetings:
+                return ("Нет запланированных встреч", "", "", "", .free)
+            }
+        }()
+
+        CurrentMeetingView(
+            title: cardInfo.title,
+            time: cardInfo.time,
+            contactName: cardInfo.contactName,
+            contactPhone: cardInfo.contactPhone,
+            status: cardInfo.status
+        )
+        .frame(width: width)
+        .frame(maxHeight: .infinity)
+        .cardStyle()
     }
 
     @ViewBuilder
     private func scheduleView() -> some View {
-        let slots = viewModel.confDataItems.map { meeting in
-            BusySlot(
-                title: meeting.conferenceSubject,
-                start: meeting.startTime,
-                end: meeting.endTime
-            )
-        }
-
         ScheduleView(
             currentDate: Date(),
-            busySlots: slots
+            busySlots: viewModel.busySlots
         )
         .cardStyle()
         .frame(maxHeight: .infinity)

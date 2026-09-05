@@ -75,6 +75,30 @@ class WeatherViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Форматирование дат прогноза
+
+    /// "2026-09-05" → "сб, 5 сент"
+    func formatDate(_ dateString: String) -> String {
+        if let date = Self.inputDateFormatter.date(from: dateString) {
+            return Self.outputDateFormatter.string(from: date)
+        }
+        return dateString
+    }
+
+    private static let inputDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
+
+    private static let outputDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.dateFormat = "EEE, d MMM"
+        return formatter
+    }()
+
     // MARK: - Кэш по городу (UserDefaults)
 
     private func saveCachedWeather(_ data: WeatherData, cityId: String) {
