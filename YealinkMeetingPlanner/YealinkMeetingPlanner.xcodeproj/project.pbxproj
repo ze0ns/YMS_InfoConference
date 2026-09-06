@@ -6,8 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		1A2B3C4D00000000000003A7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 068F5EAE2FC7F6720034368F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 068F5EB52FC7F6720034368F;
+			remoteInfo = YealinkMeetingPlanner;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		068F5EB62FC7F6720034368F /* YealinkMeetingPlanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YealinkMeetingPlanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A2B3C4D00000000000003A1 /* YealinkMeetingPlannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YealinkMeetingPlannerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -29,10 +40,22 @@
 			path = YealinkMeetingPlanner;
 			sourceTree = "<group>";
 		};
+		1A2B3C4D00000000000003A2 /* YealinkMeetingPlannerTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = YealinkMeetingPlannerTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		068F5EB32FC7F6720034368F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1A2B3C4D00000000000003A5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -46,6 +69,7 @@
 			isa = PBXGroup;
 			children = (
 				068F5EB82FC7F6720034368F /* YealinkMeetingPlanner */,
+				1A2B3C4D00000000000003A2 /* YealinkMeetingPlannerTests */,
 				068F5EB72FC7F6720034368F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				068F5EB62FC7F6720034368F /* YealinkMeetingPlanner.app */,
+				1A2B3C4D00000000000003A1 /* YealinkMeetingPlannerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -83,6 +108,29 @@
 			productReference = 068F5EB62FC7F6720034368F /* YealinkMeetingPlanner.app */;
 			productType = "com.apple.product-type.application";
 		};
+		1A2B3C4D00000000000003A3 /* YealinkMeetingPlannerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1A2B3C4D00000000000003A9 /* Build configuration list for PBXNativeTarget "YealinkMeetingPlannerTests" */;
+			buildPhases = (
+				1A2B3C4D00000000000003A4 /* Sources */,
+				1A2B3C4D00000000000003A5 /* Frameworks */,
+				1A2B3C4D00000000000003A6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1A2B3C4D00000000000003A8 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1A2B3C4D00000000000003A2 /* YealinkMeetingPlannerTests */,
+			);
+			name = YealinkMeetingPlannerTests;
+			packageProductDependencies = (
+			);
+			productName = YealinkMeetingPlannerTests;
+			productReference = 1A2B3C4D00000000000003A1 /* YealinkMeetingPlannerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -95,6 +143,10 @@
 				TargetAttributes = {
 					068F5EB52FC7F6720034368F = {
 						CreatedOnToolsVersion = 26.5;
+					};
+					1A2B3C4D00000000000003A3 = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = 068F5EB52FC7F6720034368F;
 					};
 				};
 			};
@@ -113,12 +165,20 @@
 			projectRoot = "";
 			targets = (
 				068F5EB52FC7F6720034368F /* YealinkMeetingPlanner */,
+				1A2B3C4D00000000000003A3 /* YealinkMeetingPlannerTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		068F5EB42FC7F6720034368F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1A2B3C4D00000000000003A6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +195,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		1A2B3C4D00000000000003A4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1A2B3C4D00000000000003A8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 068F5EB52FC7F6720034368F /* YealinkMeetingPlanner */;
+			targetProxy = 1A2B3C4D00000000000003A7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		068F5EC12FC7F6730034368F /* Debug */ = {
@@ -323,6 +398,46 @@
 			};
 			name = Release;
 		};
+1A2B3C4D00000000000003AA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 95C35P9LHK;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.yandex.practicum.YealinkMeetingPlannerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/YealinkMeetingPlanner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/YealinkMeetingPlanner";
+			};
+			name = Debug;
+		};
+		1A2B3C4D00000000000003AB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 95C35P9LHK;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.yandex.practicum.YealinkMeetingPlannerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/YealinkMeetingPlanner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/YealinkMeetingPlanner";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -340,6 +455,15 @@
 			buildConfigurations = (
 				068F5EC42FC7F6730034368F /* Debug */,
 				068F5EC52FC7F6730034368F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1A2B3C4D00000000000003A9 /* Build configuration list for PBXNativeTarget "YealinkMeetingPlannerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A2B3C4D00000000000003AA /* Debug */,
+				1A2B3C4D00000000000003AB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

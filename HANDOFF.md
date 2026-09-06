@@ -1,8 +1,8 @@
 # Handoff — YMS_InfoConference / YealinkMeetingPlanner
 
 **Created:** 2026-09-05
-**Updated:** 2026-09-06 (Session 4: Phase-4 clean-code items. ✅ App compiles)
-**Status:** 🟢 All phases 1-5 + Session-2 Phase 1 + Session-3 Phases 2-3 + Session-4 clean-up done. ✅ App compiles (build succeeded)
+**Updated:** 2026-09-06 (Session 5: unit tests added. ✅ 36 tests pass)
+**Status:** 🟢 All phases 1-5 + Sessions 2-5 done. ✅ App compiles, unit tests green (36/36)
 
 ---
 
@@ -51,6 +51,12 @@ Refactor the **YealinkMeetingPlanner** SwiftUI app to fix critical architecture 
   - Precision fix: `SelectRoomViewModel` needed explicit `import Foundation` after dropping `import SwiftUI` (`SortDescriptor`, `localizedDescription`); `WeatherViewModel`/`SelectRoomViewModel`/`ScanViewModel` now `import Observation`
   - 5.2 Doc-comments added: protocols `YmsApiService`, `ConferenceRepository`, `DataStorage`, `KeychainService`, `WeatherServiceProtocol`; public VM methods (`ScanViewModel` openScanner/handleScannedText/saveData/deleteData, `SelectRoomViewModel.fetchAndSaveRooms`, `ConferenceViewModel.loadCachedData`/`clearData`, `WeatherViewModel.weatherIconName`, `HeaderViewModel.dateString`/`timeString`)
   - Verified: `BUILD SUCCEEDED`, no new warnings (pre-existing warnings only). No `ObservableObject`/`@Published`/`@StateObject`/`@ObservedObject`/`import Combine` remain in the codebase
+- ✅ **Session 5 (unit tests)**:
+  - New target `YealinkMeetingPlannerTests` (`com.apple.product-type.bundle.unit-test`, hosted in app via `TEST_HOST`) added to pbxproj manually (objectVersion 77, `PBXFileSystemSynchronizedRootGroup` path `YealinkMeetingPlannerTests`); new files auto-included just like the app source
+  - Shared scheme `YealinkMeetingPlanner.xcscheme` created (xcshareddata) with TestAction → both `xcodebuild build` and `xcodebuild test -scheme YealinkMeetingPlanner` work
+  - 36 tests across 6 suites: `TimeUtils`, `WeatherIconMapper`, `ScheduleSlotFormatter`, `ConferenceTimeCalculator`, `DemoData`, `YmsRequestSigner` (headers incl. real MD5/SHA256 checks, no network)
+  - Test target sets `SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated`; test classes are `@MainActor` (app module defaults everything to MainActor). Helper `TestTime` (fixed Moscow-time calendar) in `YealinkMeetingPlannerTests/TestHelpers.swift`
+  - Verified: `** TEST SUCCEEDED **`, 36/36 passed
 - ✅ **Demo mode (feature)**: toggle in Settings → `Conference/DemoData.swift`
   - `SettingsStore.isDemoEnabled` (persisted via `storage.bool/forKey`; added `bool(forKey:)` to `DataStorage` protocol)
   - `SettingsView` gets a «Демо-данные» Toggle section at the top ("Демонстрация")
@@ -171,7 +177,7 @@ The following issues were identified in a thorough review of all 46 Swift files 
 - ~~`scanRectSize: CGFloat = 260` duplicated~~ — ✅ resolved: `LayoutDimensions.scannerScanRectSize` (Session 4)
 - `ScheduleSlotFormatter.timeSlots()` hardcodes 7:00–20:00/30-min step — could move to constants
 - `ConferenceRoomScreen` has unused `@Environment(\.dismiss)` residual — can be removed
-- Unit tests still absent — `ConferenceTimeCalculator`/`ScheduleSlotFormatter`/`TimeUtils`/`WeatherIconMapper`/`DemoData` are the clean testable core; all deps stubbable (YmsApiService/ConferenceRepository/RoomRepository/DataStorage/KeychainService/WeatherServiceProtocol/APICredentialsProviding)
+- ~~Unit tests still absent~~ — ✅ added (Session 5): target `YealinkMeetingPlannerTests`, 36 tests, all green. Pure core covered: `ConferenceTimeCalculator`/`ScheduleSlotFormatter`/`TimeUtils`/`WeatherIconMapper`/`DemoData`/`YmsRequestSigner`. Deps remain stubbable for VM-level tests (YmsApiService/ConferenceRepository/RoomRepository/DataStorage/KeychainService/WeatherServiceProtocol/APICredentialsProviding)
 
 ---
 
@@ -227,6 +233,10 @@ The following issues were identified in a thorough review of all 46 Swift files 
 | ~~`Model/ConfModel.swift`~~ | ✅ deleted Session 4 | unused struct |
 | ~~`ScheduleView/ScheduleRow.swift`~~ | ✅ deleted Session 4 | unused component |
 
+| `YealinkMeetingPlannerTests/` (6 файлов) | ✅ NEW Session 5 | Test-target sources: TimeUtils, WeatherIconMapper, ScheduleSlotFormatter, ConferenceTimeCalculator, DemoData, YmsRequestSigner + `TestHelpers.swift` (TestTime) |
+| `YealinkMeetingPlannerTests` target | ✅ NEW Session 5 | unit-test bundle, hosted via TEST_HOST, `PBXFileSystemSynchronizedRootGroup` |
+| `YealinkMeetingPlanner.xcscheme` | ✅ NEW Session 5 | shared scheme w/ TestAction (build + test work) |
+
 ---
 
 ## Notes for Next Agent
@@ -246,4 +256,4 @@ The following issues were identified in a thorough review of all 46 Swift files 
 - `ConferenceDataFetcher` + `ConferenceDataFetcher`/repository/calculator are all `@MainActor` (ModelContext/@Model constraint); pure `ConferenceTimeCalculator` logic is the testable unit
 - `KeychainManager` has an empty `init()` now (was implicit); used by all `?? KeychainManager.shared` defaults
 - Russian-language commit messages throughout — code comments may be in Russian too
-- No unit tests exist — any refactoring should be verified by building and manual testing
+- **Unit tests (Session 5):** run `xcodebuild test -project YealinkMeetingPlanner.xcodeproj -scheme YealinkMeetingPlanner -destination 'platform=iOS Simulator,name=iPhone 17'` (shared scheme now includes TestAction). Test target is hosted in the app (`TEST_HOST`); a running simulator with the app is required. Tests are `@MainActor` because the app module is built with `-default-isolation=MainActor`; the tests target itself is `nonisolated`. New test files in `YealinkMeetingPlannerTests/` are auto-included via `PBXFileSystemSynchronizedRootGroup`
