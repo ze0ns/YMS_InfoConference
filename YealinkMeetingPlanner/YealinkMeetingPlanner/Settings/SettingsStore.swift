@@ -34,6 +34,7 @@ class SettingsStore {
 
     private static let pinKeychainKey = "settings_access_pin"
     private static let cityDefaultsKey = "settings_selected_city_id"
+    private static let demoEnabledKey = "settings_demo_enabled"
 
     private let keychain: KeychainService
     private let storage: DataStorage
@@ -46,6 +47,11 @@ class SettingsStore {
         didSet { storage.set(selectedCity.id, forKey: Self.cityDefaultsKey) }
     }
 
+    /// Демо-режим: вместо реального API показывается синтетическое расписание
+    var isDemoEnabled: Bool {
+        didSet { storage.set(isDemoEnabled, forKey: Self.demoEnabledKey) }
+    }
+
     init(keychain: KeychainService? = nil, storage: DataStorage? = nil) {
         self.keychain = keychain ?? KeychainManager.shared
         self.storage = storage ?? UserDefaults.standard
@@ -56,6 +62,8 @@ class SettingsStore {
         let savedCityId = self.storage.string(forKey: Self.cityDefaultsKey)
         selectedCity = CityCatalog.cities.first { $0.id == savedCityId }
             ?? CityCatalog.cities[0]
+
+        isDemoEnabled = self.storage.bool(forKey: Self.demoEnabledKey)
     }
 
     /// Смена пин-кода: сохраняет новый в Keychain

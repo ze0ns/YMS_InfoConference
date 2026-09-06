@@ -63,3 +63,46 @@ final class SwiftDataConferenceRepository: ConferenceRepository {
         try modelContext.deleteAll(of: ConfDataModel.self)
     }
 }
+
+// MARK: - Протокол репозитория комнат (DIP: вместо прямого ModelContext)
+
+/// Репозиторий комнат (DIP: ViewModel не работает с ModelContext напрямую).
+@MainActor
+protocol RoomRepository {
+    /// Загружает все комнаты, отсортированные по имени.
+    func loadRooms() throws -> [RoomModel]
+    /// Заменяет всё содержимое списком комнат из API.
+    func replaceAll(with rooms: [DatumRoom]) throws
+    /// Очищает кэш комнат.
+    func clearAll() throws
+}
+
+// MARK: - SwiftData-реализация
+
+@MainActor
+final class SwiftDataRoomRepository: RoomRepository {
+    private let modelContext: ModelContext
+
+    init(modelContext: ModelContext) {
+        self.modelContext = modelContext
+    }
+
+    func loadRooms() throws -> [RoomModel] {
+        try modelContext.fetch(
+            FetchDescriptor<RoomModel>(sortBy: [SortDescriptor(\.namePinyin)])
+        )
+    }
+
+    func replaceAll(with rooms: [DatumRoom]) throws {
+        try clearAll()
+
+        for room in rooms {
+            modelContext.insert(RoomModel(id: room.id, namePinyin: room.namePinyin))
+        }
+        try modelContext.save()
+    }
+
+    func clearAll() throws {
+        try modelContext.deleteAll(of: RoomModel.self)
+    }
+}

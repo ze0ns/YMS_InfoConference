@@ -7,21 +7,25 @@
 import SwiftUI
 
 struct WeatherForecastView: View {
-    @State private var weatherViewModel = WeatherViewModel()
+    @State private var viewModel: WeatherViewModel
+
+    init(viewModel: WeatherViewModel? = nil) {
+        _viewModel = State(initialValue: viewModel ?? WeatherViewModel())
+    }
 
     var body: some View {
         ZStack {
             // Данные приоритетнее ошибки: при сбое сети остаётся последний прогноз
-            if let data = weatherViewModel.weatherData {
+            if let data = viewModel.weatherData {
                 weatherContent(data: data)
-            } else if weatherViewModel.isLoading {
+            } else if viewModel.isLoading {
                 loadingView
-            } else if let errorMessage = weatherViewModel.errorMessage {
+            } else if let errorMessage = viewModel.errorMessage {
                 errorView(message: errorMessage)
             }
         }
         .task {
-            await weatherViewModel.fetchWeather()
+            await viewModel.fetchWeather()
         }
         .background(Color.bgColorScheduler)
     }
@@ -45,7 +49,7 @@ struct WeatherForecastView: View {
                 .multilineTextAlignment(.center)
             Button("Повторить") {
                 Task {
-                    await weatherViewModel.fetchWeather()
+                    await viewModel.fetchWeather()
                 }
             }
             .foregroundColor(.blue)
@@ -115,7 +119,7 @@ struct WeatherForecastView: View {
 
             ForEach(0..<daysToShow, id: \.self) { (idx: Int) in
                 VStack {
-                    Text(weatherViewModel.formatDate(data.daily.time[idx]))
+                    Text(viewModel.formatDate(data.daily.time[idx]))
                         .frame(width: LayoutDimensions.weatherDailyDayWidth, alignment: .leading)
                         .foregroundColor(.white)
 

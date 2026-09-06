@@ -8,7 +8,12 @@ import SwiftUI
 
 struct HeaderView: View {
     let roomName: String
-    @State private var headerViewModel = HeaderViewModel()
+    @State private var viewModel: HeaderViewModel
+
+    init(roomName: String, viewModel: HeaderViewModel? = nil) {
+        self.roomName = roomName
+        _viewModel = State(initialValue: viewModel ?? HeaderViewModel())
+    }
 
     var body: some View {
         HStack(spacing: 8) {
@@ -25,11 +30,11 @@ struct HeaderView: View {
             .padding(.leading, 20)
             Spacer()
             VStack(alignment: .trailing) {
-                Text(headerViewModel.dateString(from: headerViewModel.currentDate))
+                Text(viewModel.dateString(from: viewModel.currentDate))
                     .font(.headline)
                     .foregroundColor(.white)
                     .padding(.top, 4)
-                Text(headerViewModel.timeString(from: headerViewModel.currentDate))
+                Text(viewModel.timeString(from: viewModel.currentDate))
                     .font(.largeTitle)
                     .foregroundColor(.white)
                     .padding(.top, 4)

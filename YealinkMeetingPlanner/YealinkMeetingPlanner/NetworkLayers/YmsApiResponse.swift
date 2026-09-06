@@ -49,6 +49,11 @@ struct RoomListRequest: Encodable {
 // MARK: - Реализация
 
 struct YmsApiResponse: YmsApiService {
+    private let config: APICredentialsProviding
+
+    init(config: APICredentialsProviding = APIConfig()) {
+        self.config = config
+    }
 
     func getConferenceSchedule(roomId: String) async throws -> ConferenceScheduler {
         try await post(
@@ -68,13 +73,15 @@ struct YmsApiResponse: YmsApiService {
     ) async throws -> Response {
         let bodyData = try JSONEncoder().encode(body)
 
-        guard let url = URL(string: Self.hostURL + path) else {
+        let base = config.hostURL
+        let trimmedBase = base.hasSuffix("/") ? String(base.dropLast()) : base
+        guard let url = URL(string: trimmedBase + "/" + path) else {
             throw NetError.invalidURL
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.allHTTPHeaderFields = Self.signedHeaders(method: "POST", path: path, bodyData: bodyData)
+        request.allHTTPHeaderFields = signedHeaders(method: "POST", path: path, bodyData: bodyData)
         request.httpBody = bodyData
 
         AppLog.network.info("Запрос: POST \(path, privacy: .public)")
@@ -95,20 +102,11 @@ struct YmsApiResponse: YmsApiService {
         }
     }
 
-    /// Базовый адрес сервера из Config.plist с гарантированным завершающим слэшем
-    private static var hostURL: String {
-        var base = APIConfig.hostURL
-        if !base.isEmpty && !base.hasSuffix("/") {
-            base += "/"
-        }
-        return base
-    }
-
     // MARK: - Подпись запроса (HMAC-SHA256)
 
-    private static func signedHeaders(method: String, path: String, bodyData: Data?) -> [String: String] {
-        let accessKey = APIConfig.currentYlAccessKey
-        let secretKey = APIConfig.currentYlSecretKey
+    private func signedHeaders(method: String, path: String, bodyData: Data?) -> [String: String] {
+        let accessKey = config.currentYlAccessKey
+        let secretKey = config.currentYlSecretKey
         let nonce = UUID().uuidString.replacingOccurrences(of: "-", with: "")
         let timestamp = String(format: "%.0f", Date().timeIntervalSince1970 * 1000)
 

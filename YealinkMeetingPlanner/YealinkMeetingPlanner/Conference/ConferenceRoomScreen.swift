@@ -7,8 +7,22 @@
 import SwiftUI
 import SwiftData
 
+/// In-memory хранилище для Preview и тестов (ничего не пишет в UserDefaults).
+final class MockStorage: DataStorage {
+    private var store: [String: Any] = [:]
+
+    func string(forKey defaultName: String) -> String? { store[defaultName] as? String }
+    func bool(forKey defaultName: String) -> Bool { store[defaultName] as? Bool ?? false }
+    func object(forKey defaultName: String) -> Any? { store[defaultName] }
+    func data(forKey defaultName: String) -> Data? { store[defaultName] as? Data }
+    func set(_ value: Any?, forKey defaultName: String) { store[defaultName] = value }
+    func set(_ value: Double, forKey defaultName: String) { store[defaultName] = value }
+    func removeObject(forKey defaultName: String) { store.removeValue(forKey: defaultName) }
+}
+
 struct ConferenceRoomScreen: View {
     @Environment(AppState.self) private var appState
+    @Environment(SettingsStore.self) private var settings
     @Environment(\.dismiss) private var dismiss
 
     private let viewModel: ConferenceViewModel
@@ -27,7 +41,7 @@ struct ConferenceRoomScreen: View {
 
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: LayoutDimensions.headerToContentSpacing) {
-                    HeaderView(roomName: appState.selectedRoom?.namePinyin ?? "Выберите комнату")
+                    HeaderView(roomName: viewModel.displayRoomName)
                         .cardStyle()
                         .padding(.horizontal, LayoutDimensions.screenHorizontalPadding)
 
@@ -78,6 +92,11 @@ struct ConferenceRoomScreen: View {
         .task(id: viewModel.roomId) {
             await viewModel.loadSchedule()
         }
+        .onChange(of: settings.isDemoEnabled) { _, _ in
+            Task {
+                await viewModel.loadSchedule()
+            }
+        }
     }
 
     // MARK: - Компоненты данных
@@ -123,7 +142,8 @@ struct ConferenceRoomScreen: View {
 // MARK: - Preview
 struct ConferenceRoomScreen_Previews: PreviewProvider {
     static var previews: some View {
-        let appState = AppState()
+        let appState = AppState(storage: MockStorage())
+        let settingsStore = SettingsStore(storage: MockStorage())
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
 
         guard let container = try? ModelContainer(
@@ -138,11 +158,13 @@ struct ConferenceRoomScreen_Previews: PreviewProvider {
             ConferenceRoomScreen(
                 viewModel: ConferenceViewModel(
                     appState: appState,
-                    modelContext: container.mainContext
+                    modelContext: container.mainContext,
+                    settings: settingsStore
                 )
             )
             .modelContainer(container)
             .environment(appState)
+            .environment(settingsStore)
         )
     }
 }

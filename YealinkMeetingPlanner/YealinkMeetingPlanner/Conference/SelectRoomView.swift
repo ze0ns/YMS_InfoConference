@@ -12,7 +12,11 @@ struct SelectRoomView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
 
-    @State private var viewModel = SelectRoomViewModel()
+    @State private var viewModel: SelectRoomViewModel
+
+    init(viewModel: SelectRoomViewModel? = nil) {
+        _viewModel = State(initialValue: viewModel ?? SelectRoomViewModel())
+    }
 
     var body: some View {
         VStack {
@@ -59,7 +63,10 @@ struct SelectRoomView: View {
             }
         }
         .task {
-            viewModel.configure(modelContext: modelContext, appState: appState)
+            viewModel.configure(
+                repository: SwiftDataRoomRepository(modelContext: modelContext),
+                appState: appState
+            )
             await viewModel.fetchAndSaveRooms()
         }
     }

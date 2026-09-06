@@ -13,9 +13,29 @@ struct SettingsView: View {
     @State private var settings = SettingsStore.shared
     @State private var isChangePinPresented = false
 
+    private let apiConfig = APIConfig()
+
     var body: some View {
         NavigationStack {
             List {
+                // MARK: Демо-режим
+                Section {
+                    Toggle(isOn: $settings.isDemoEnabled) {
+                        LabeledContent {
+                            Text(settings.isDemoEnabled ? "Включён" : "Выключен")
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Демо-данные")
+                                Text("Показать синтетическое расписание вместо сервера")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Демонстрация")
+                }
+
                 // MARK: Город
                 Section("Погода") {
                     NavigationLink {
@@ -50,7 +70,7 @@ struct SettingsView: View {
                     } label: {
                         LabeledContent(
                             "Ключи доступа",
-                            value: APIConfig.usesKeychainKeys ? "Сканированы" : "Config.plist"
+                            value: apiConfig.usesKeychainKeys ? "Сканированы" : "Config.plist"
                         )
                     }
                 }

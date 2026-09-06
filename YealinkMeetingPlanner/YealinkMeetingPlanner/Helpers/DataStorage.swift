@@ -13,6 +13,8 @@ import Foundation
 protocol DataStorage {
     /// Строковое значение по ключу.
     func string(forKey defaultName: String) -> String?
+    /// Логическое значение по ключу.
+    func bool(forKey defaultName: String) -> Bool
     /// Любое значение по ключу (Number/Data/String) для чтения типов, которых нет в протоколе.
     func object(forKey defaultName: String) -> Any?
     /// Data-значение по ключу.

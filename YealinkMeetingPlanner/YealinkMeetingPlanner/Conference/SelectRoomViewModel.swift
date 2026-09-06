@@ -5,7 +5,6 @@
 //  Created by Oschepkov Aleksandr on 16.08.2026.
 //
 import Foundation
-import SwiftData
 import Observation
 import os
 
@@ -17,18 +16,20 @@ final class SelectRoomViewModel {
     var isLoading = false
 
     private let api: YmsApiService
-    private var modelContext: ModelContext?
+    private var repository: RoomRepository?
     private var appState: AppState?
 
-    init(api: YmsApiService? = nil) {
+    init(api: YmsApiService? = nil, repository: RoomRepository? = nil, appState: AppState? = nil) {
         self.api = api ?? YmsApiResponse()
+        self.repository = repository
+        self.appState = appState
     }
 
-    /// Вызывается из View при появлении — modelContext и appState доступны
+    /// Вызывается из View при появлении — repository и appState доступны
     /// только через @Environment
-    func configure(modelContext: ModelContext, appState: AppState) {
-        if self.modelContext == nil {
-            self.modelContext = modelContext
+    func configure(repository: RoomRepository, appState: AppState) {
+        if self.repository == nil {
+            self.repository = repository
         }
         if self.appState == nil {
             self.appState = appState
@@ -47,8 +48,8 @@ final class SelectRoomViewModel {
 
     /// Загружает комнаты из API, обновляет базу данных и отображаемый список.
     func fetchAndSaveRooms() async {
-        guard let modelContext, let appState else {
-            errorMessage = "Контекст базы данных не настроен"
+        guard let repository, let appState else {
+            errorMessage = "Хранилище и состояние приложения не настроены"
             return
         }
         isLoading = true
@@ -57,23 +58,14 @@ final class SelectRoomViewModel {
         do {
             // 1. Получаем данные из API
             let response = try await api.getRooms()
-            let fetchedRooms = response.data.data
 
-            // 2. Удаляем старые записи из базы
-            try modelContext.deleteAll(of: RoomModel.self)
+            // 2. Заменяем записи в базе данными из API
+            try repository.replaceAll(with: response.data.data)
 
-            // 3. Маппим и сохраняем новые данные
-            for roomData in fetchedRooms {
-                modelContext.insert(
-                    RoomModel(id: roomData.id, namePinyin: roomData.namePinyin)
-                )
-            }
-            try modelContext.save()
+            // 3. Обновляем список из базы
+            rooms = try repository.loadRooms()
 
-            // 4. Обновляем список из базы
-            rooms = try modelContext.fetch(FetchDescriptor<RoomModel>(sortBy: [SortDescriptor(\.namePinyin)]))
-
-            // 5. Если выбранная комната удалена из API — сбрасываем выбор
+            // 4. Если выбранная комната удалена из API — сбрасываем выбор
             if let currentSelected = appState.selectedRoom,
                !rooms.contains(where: { $0.id == currentSelected.id }) {
                 appState.selectedRoom = nil

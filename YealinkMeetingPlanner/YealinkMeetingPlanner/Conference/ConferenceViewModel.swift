@@ -19,6 +19,7 @@ final class ConferenceViewModel {
 
     private let fetcher: ConferenceDataFetcher
     private let appState: AppState
+    private let settings: SettingsStore
 
     @ObservationIgnored
     nonisolated(unsafe) private var refreshTimer: Timer?
@@ -26,11 +27,19 @@ final class ConferenceViewModel {
     /// ID выбранной комнаты — View использует его как .task(id:).
     var roomId: String? { appState.selectedRoom?.id }
 
+    /// Имя комнаты для шапки (в демо-режиме — синтетическое).
+    var displayRoomName: String {
+        if settings.isDemoEnabled { return "Демо-конференц-зал" }
+        return appState.selectedRoom?.namePinyin ?? "Выберите комнату"
+    }
+
     init(api: YmsApiService? = nil,
          appState: AppState,
          modelContext: ModelContext,
+         settings: SettingsStore? = nil,
          repository: ConferenceRepository? = nil) {
         self.appState = appState
+        self.settings = settings ?? SettingsStore.shared
         self.fetcher = ConferenceDataFetcher(
             api: api,
             repository: repository ?? SwiftDataConferenceRepository(modelContext: modelContext)
@@ -56,6 +65,13 @@ final class ConferenceViewModel {
 
     /// Полная загрузка расписания (вызывается из View через .task(id:)).
     func loadSchedule() async {
+        if settings.isDemoEnabled {
+            confDataItems = DemoData.conferences()
+            isLoading = false
+            errorMessage = nil
+            return
+        }
+
         guard let roomId else {
             clearData()
             return
@@ -75,6 +91,10 @@ final class ConferenceViewModel {
     }
 
     private func refreshSchedule() {
+        if settings.isDemoEnabled {
+            confDataItems = DemoData.conferences()
+            return
+        }
         guard let roomId else { return }
         Task {
             do {
@@ -90,7 +110,9 @@ final class ConferenceViewModel {
 
     /// Готовые данные для карточки текущей встречи. View только отображает результат.
     var currentMeetingDisplay: MeetingDisplayState {
-        guard appState.selectedRoom != nil else { return .noRoom }
+        if !settings.isDemoEnabled {
+            guard appState.selectedRoom != nil else { return .noRoom }
+        }
 
         guard let meeting = ConferenceTimeCalculator.currentMeeting(in: confDataItems) else {
             return confDataItems.isEmpty ? .noMeetings : .free
@@ -106,8 +128,9 @@ final class ConferenceViewModel {
 
     // MARK: - Работа с кэшем (SwiftData)
 
-    /// Загружает кэш расписания из базы.
+    /// Загружает кэш расписания из базы (в демо-режиме пропускается).
     func loadCachedData() {
+        guard !settings.isDemoEnabled else { return }
         do {
             confDataItems = try fetcher.loadCachedConferences()
         } catch {

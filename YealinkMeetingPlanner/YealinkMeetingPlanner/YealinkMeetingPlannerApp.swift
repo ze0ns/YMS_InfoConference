@@ -45,5 +45,6 @@ struct YealinkMeetingPlannerApp: App {
         }
         .modelContainer(sharedModelContainer)
         .environment(appState)
+        .environment(SettingsStore.shared)
     }
 }
