@@ -19,7 +19,7 @@ final class DemoDataTests: XCTestCase {
     }
 
     func testCurrentMomentIsAlwaysOccupied() {
-        for (hour, minute) in [(9, 0), (10, 17), (12, 0), (15, 45), (18, 30)] {
+        for (hour, minute) in [(7, 0), (10, 17), (12, 0), (15, 45), (18, 30)] {
             let now = TestTime.date(hour: hour, minute: minute)
             let meetings = DemoData.conferences(now: now, calendar: TestTime.calendar)
             XCTAssertNotNil(
@@ -58,6 +58,25 @@ final class DemoDataTests: XCTestCase {
         let now = TestTime.date(hour: 6, minute: 0)
         let meetings = DemoData.conferences(now: now, calendar: TestTime.calendar)
         XCTAssertNil(ConferenceTimeCalculator.currentMeeting(in: meetings, now: now))
+    }
+
+    func testFirstMeetingStartsAtSeven() {
+        // Первая встреча дня начинается в 07:00 и окно 07:00–08:00 занято
+        for (hour, minute) in [(7, 0), (9, 45), (12, 0), (15, 0)] {
+            let meetings = DemoData.conferences(now: TestTime.date(hour: hour, minute: minute), calendar: TestTime.calendar)
+            XCTAssertEqual(
+                meetings.map { TimeUtils.minutes(of: $0.startTime) }.min(),
+                dayStart,
+                "Демо при \(hour):\(minute): первая встреча должна начинаться в 07:00"
+            )
+            for (probeHour, probeMinute) in [(7, 0), (7, 30), (8, 0)] {
+                let probe = TestTime.date(hour: probeHour, minute: probeMinute)
+                XCTAssertNotNil(
+                    ConferenceTimeCalculator.currentMeeting(in: meetings, now: probe),
+                    "Демо при \(hour):\(minute): проба \(probeHour):\(probeMinute) должна быть занята"
+                )
+            }
+        }
     }
 
     func testTimeFormatIsHourMinute() {

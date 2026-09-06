@@ -10,9 +10,9 @@ import SwiftData
 
 // MARK: - Демо-расписание (чистая логика, без сетевых запросов)
 
-/// Генерирует синтетическое расписание на день: заполняет 07:00–20:00 встречами
-/// и гарантирует, что в текущий момент комната занята. Нужно Preview и для
-/// демонстрации интерфейса, когда сервер недоступен.
+/// Генерирует синтетическое расписание на день: первая встреча в 07:00,
+/// затем 90-мин встречи с 30-мин перерывами до 20:00; текущий момент
+/// гарантированно приходится на встречу (нужно Preview и демо, когда сервер недоступен).
 enum DemoData {
 
     private static let dayStart = 7 * 60    // 07:00
@@ -53,20 +53,17 @@ enum DemoData {
         let currentMinutes = calendar.component(.hour, from: now) * 60
             + calendar.component(.minute, from: now)
 
-        // Текущая встреча: 90 минут, выровнена по 30-минутной сетке,
-        // но не выходит за границы рабочего дня — чтобы её было видно в расписании.
-        let alignedCurrentStart = (currentMinutes / 30) * 30
-        let currentStart = min(max(alignedCurrentStart, dayStart), dayEnd - meetingDuration)
+        let slotOffset = (currentMinutes - dayStart) / meetingDuration
+        let currentStart = min(max(dayStart + slotOffset * meetingDuration, dayStart), dayEnd - meetingDuration)
         let currentEnd = currentStart + meetingDuration
 
         var meetings: [Meeting] = []
         var index = 0
-
-        // Утро: заполняем пробелы от начала дня до текущей встречи
+        // Первая встреча в 07:00, далее встык до текущей встречи
         var time = dayStart
         while time + meetingDuration <= currentStart {
             meetings.append(makeMeeting(start: time, end: time + meetingDuration, index: &index))
-            time += meetingDuration + gap
+            time += meetingDuration
         }
 
         // Текущая встреча — комната занята «прямо сейчас»

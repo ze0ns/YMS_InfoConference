@@ -1,8 +1,8 @@
 # Handoff — YMS_InfoConference / YealinkMeetingPlanner
 
 **Created:** 2026-09-05
-**Updated:** 2026-09-06 (Session 5: unit tests added. ✅ 36 tests pass)
-**Status:** 🟢 All phases 1-5 + Sessions 2-5 done. ✅ App compiles, unit tests green (36/36)
+**Updated:** 2026-09-06 (Session 6: demo «ЗАНЯТОСТЬ» filled 07:00–10:00. ✅ 37 tests pass)
+**Status:** 🟢 All phases 1-5 + Sessions 2-6 done. ✅ App compiles, unit tests green (37/37)
 
 ---
 
@@ -54,16 +54,21 @@ Refactor the **YealinkMeetingPlanner** SwiftUI app to fix critical architecture 
 - ✅ **Session 5 (unit tests)**:
   - New target `YealinkMeetingPlannerTests` (`com.apple.product-type.bundle.unit-test`, hosted in app via `TEST_HOST`) added to pbxproj manually (objectVersion 77, `PBXFileSystemSynchronizedRootGroup` path `YealinkMeetingPlannerTests`); new files auto-included just like the app source
   - Shared scheme `YealinkMeetingPlanner.xcscheme` created (xcshareddata) with TestAction → both `xcodebuild build` and `xcodebuild test -scheme YealinkMeetingPlanner` work
-  - 36 tests across 6 suites: `TimeUtils`, `WeatherIconMapper`, `ScheduleSlotFormatter`, `ConferenceTimeCalculator`, `DemoData`, `YmsRequestSigner` (headers incl. real MD5/SHA256 checks, no network)
+  - 37 tests across 6 suites: `TimeUtils`, `WeatherIconMapper`, `ScheduleSlotFormatter`, `ConferenceTimeCalculator`, `DemoData`, `YmsRequestSigner` (headers incl. real MD5/SHA256 checks, no network)
   - Test target sets `SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated`; test classes are `@MainActor` (app module defaults everything to MainActor). Helper `TestTime` (fixed Moscow-time calendar) in `YealinkMeetingPlannerTests/TestHelpers.swift`
-  - Verified: `** TEST SUCCEEDED **`, 36/36 passed
+  - Verified: `** TEST SUCCEEDED **`, 37/37 passed
 - ✅ **Demo mode (feature)**: toggle in Settings → `Conference/DemoData.swift`
   - `SettingsStore.isDemoEnabled` (persisted via `storage.bool/forKey`; added `bool(forKey:)` to `DataStorage` protocol)
   - `SettingsView` gets a «Демо-данные» Toggle section at the top ("Демонстрация")
-  - `Conference/DemoData.swift` — pure generator: fills 07:00–20:00 with 90-min meetings and guarantees the room is currently occupied (a meeting covers "now"); room name shown as «Демо-конференц-зал» via `ConferenceViewModel.displayRoomName`
+  - `Conference/DemoData.swift` — pure generator: first meeting at 07:00, then 90-min meetings (adjacent in the morning, 30-min breaks afternoon) up to 20:00; guarantees the room is currently occupied; room name «Демо-конференц-зал» via `ConferenceViewModel.displayRoomName`
   - `ConferenceViewModel` branches on `isDemoEnabled` in `loadSchedule`/`refreshSchedule`/`loadCachedData`/`currentMeetingDisplay` — in demo it serves `DemoData.conferences()` instead of API and skips real-room/no-room states
   - `ConferenceRoomScreen` re-runs `loadSchedule` on `settings.isDemoEnabled` change; preview injects `SettingsStore` + `MockStorage` (test seam). Added `MockStorage` (in-memory `DataStorage`) for previews/tests
   - Verified: `BUILD SUCCEEDED`, no new warnings; logic tested for 07:00–19:30 → always `occupiedNow=true`
+- ✅ **Session 6 (demo «ЗАНЯТОСТЬ»: первая встреча в 07:00)**:
+  - Iterative: (1) morning looked empty 07:00–10:00 → made back-to-back from 07:00; (2) user wanted 07:00–10:00 «свободно» → morning loop start moved to 10:00; (3) **final**: user asked to fix the first meeting start to 07:00 → morning loop start is `dayStart` again (`var time = dayStart`, adjacent 90-min meetings up to the current meeting; afternoon keeps 30-min breaks)
+  - ⚠️ Note: at some point the file contained `var time = 70 * 60` (dead code — loop never ran); replaced with `dayStart`
+  - Test `testFirstMeetingStartsAtSeven` (renamed from `testSevenToTenIsAlwaysFree`): earliest meeting start == 07:00 and 07:00–08:00 busy for demo starts 07:00/09:45/12:00/15:00
+  - Verified: `** TEST SUCCEEDED **`, **37/37 passed**
 
 ### ✅ QRScanner build blocker (fixed)
 A previous incomplete change rewrote `QRScannerOverlayView.swift` as a SwiftUI `View`, but `QRScannerViewController` still treated it as a `UIView` → ~10 compile errors.
@@ -177,7 +182,7 @@ The following issues were identified in a thorough review of all 46 Swift files 
 - ~~`scanRectSize: CGFloat = 260` duplicated~~ — ✅ resolved: `LayoutDimensions.scannerScanRectSize` (Session 4)
 - `ScheduleSlotFormatter.timeSlots()` hardcodes 7:00–20:00/30-min step — could move to constants
 - `ConferenceRoomScreen` has unused `@Environment(\.dismiss)` residual — can be removed
-- ~~Unit tests still absent~~ — ✅ added (Session 5): target `YealinkMeetingPlannerTests`, 36 tests, all green. Pure core covered: `ConferenceTimeCalculator`/`ScheduleSlotFormatter`/`TimeUtils`/`WeatherIconMapper`/`DemoData`/`YmsRequestSigner`. Deps remain stubbable for VM-level tests (YmsApiService/ConferenceRepository/RoomRepository/DataStorage/KeychainService/WeatherServiceProtocol/APICredentialsProviding)
+- ~~Unit tests still absent~~ — ✅ added (Session 5) + extended (Session 6): target `YealinkMeetingPlannerTests`, 37 tests, all green. Pure core covered: `ConferenceTimeCalculator`/`ScheduleSlotFormatter`/`TimeUtils`/`WeatherIconMapper`/`DemoData`/`YmsRequestSigner`. Deps remain stubbable for VM-level tests (YmsApiService/ConferenceRepository/RoomRepository/DataStorage/KeychainService/WeatherServiceProtocol/APICredentialsProviding)
 
 ---
 
@@ -188,7 +193,7 @@ The following issues were identified in a thorough review of all 46 Swift files 
 | `Conference/ConferenceRoomScreen.swift` | ✅ Sessions 1-5,3 | no switch over state; reads `state.title/time/contactName/contactPhone/roomStatus` |
 | `Conference/ConferenceViewModel.swift` | ✅ Session 3 | thin presentation VM; forwards to `ConferenceScheduleStore`; `currentMeetingDisplay`+`busySlots` |
 | `Conference/ConferenceScheduleStore.swift` | ✅ NEW Session 3 | schedule data + cache + timer + demo + `roomId`/`displayRoomName` |
-| `Conference/DemoData.swift` | ✅ NEW demo | synthetic day schedule; guarantees occupied-now |
+| `Conference/DemoData.swift` | ✅ Session 6 | synthetic day schedule; first meeting 07:00, morning adjacent, afternoon 30-min breaks; guarantees occupied-now |
 | `Conference/ConferenceRoomScreen.swift` | ✅ demo | injected `SettingsStore` env; `displayRoomName`; demo-toggle refresh; `MockStorage` for previews |
 | `Conference/SelectRoomViewModel.swift` | ✅ Phases 3-5 + Session 2 | `@Observable`; **`RoomRepository` injected via `configure(repository:appState:)` (no direct ModelContext)** |
 | `Conference/SelectRoomView.swift` | ✅ Phase 5 | `@State private var viewModel = SelectRoomViewModel()` |
@@ -233,7 +238,7 @@ The following issues were identified in a thorough review of all 46 Swift files 
 | ~~`Model/ConfModel.swift`~~ | ✅ deleted Session 4 | unused struct |
 | ~~`ScheduleView/ScheduleRow.swift`~~ | ✅ deleted Session 4 | unused component |
 
-| `YealinkMeetingPlannerTests/` (6 файлов) | ✅ NEW Session 5 | Test-target sources: TimeUtils, WeatherIconMapper, ScheduleSlotFormatter, ConferenceTimeCalculator, DemoData, YmsRequestSigner + `TestHelpers.swift` (TestTime) |
+| `YealinkMeetingPlannerTests/` (7 файлов) | ✅ NEW Session 5, +1 Session 6 | Test-target sources: TimeUtils, WeatherIconMapper, ScheduleSlotFormatter, ConferenceTimeCalculator, DemoData (incl. `testSevenToTenIsAlwaysBusy`), YmsRequestSigner + `TestHelpers.swift` (TestTime) |
 | `YealinkMeetingPlannerTests` target | ✅ NEW Session 5 | unit-test bundle, hosted via TEST_HOST, `PBXFileSystemSynchronizedRootGroup` |
 | `YealinkMeetingPlanner.xcscheme` | ✅ NEW Session 5 | shared scheme w/ TestAction (build + test work) |
 
@@ -256,4 +261,5 @@ The following issues were identified in a thorough review of all 46 Swift files 
 - `ConferenceDataFetcher` + `ConferenceDataFetcher`/repository/calculator are all `@MainActor` (ModelContext/@Model constraint); pure `ConferenceTimeCalculator` logic is the testable unit
 - `KeychainManager` has an empty `init()` now (was implicit); used by all `?? KeychainManager.shared` defaults
 - Russian-language commit messages throughout — code comments may be in Russian too
-- **Unit tests (Session 5):** run `xcodebuild test -project YealinkMeetingPlanner.xcodeproj -scheme YealinkMeetingPlanner -destination 'platform=iOS Simulator,name=iPhone 17'` (shared scheme now includes TestAction). Test target is hosted in the app (`TEST_HOST`); a running simulator with the app is required. Tests are `@MainActor` because the app module is built with `-default-isolation=MainActor`; the tests target itself is `nonisolated`. New test files in `YealinkMeetingPlannerTests/` are auto-included via `PBXFileSystemSynchronizedRootGroup`
+- **Unit tests (Session 5+6):** run `xcodebuild test -project YealinkMeetingPlanner.xcodeproj -scheme YealinkMeetingPlanner -destination 'platform=iOS Simulator,name=iPhone 17'` (shared scheme now includes TestAction). Test target is hosted in the app (`TEST_HOST`); a running simulator with the app is required. Tests are `@MainActor` because the app module is built with `-default-isolation=MainActor`; the tests target itself is `nonisolated`. New test files in `YealinkMeetingPlannerTests/` are auto-included via `PBXFileSystemSynchronizedRootGroup`
+- **Demo schedule (Session 6):** `DemoData.conferences` — first meeting at 07:00; morning meetings adjacent (90 min each) up to the current meeting; afternoon keeps 30-min breaks. Current meeting always covers "now". Test `testFirstMeetingStartsAtSeven` verifies earliest start == 07:00 and 07:00–08:00 busy
