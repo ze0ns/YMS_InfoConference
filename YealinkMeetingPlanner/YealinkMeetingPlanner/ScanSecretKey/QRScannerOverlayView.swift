@@ -1,15 +1,7 @@
-//
-//  QRScannerOverlayView.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 27.06.2026.
-//
-
 import SwiftUI
 
-// MARK: - Overlay with scanning frame (SwiftUI version)
+// MARK: - Оверлей с рамкой сканирования
 struct QRScannerOverlayView: View {
-    /// Размер рамки сканирования (квадрат)
     private let scanRectSize = LayoutDimensions.scannerScanRectSize
     private let cornerLength: CGFloat = 28
     private let cornerLineWidth: CGFloat = 5
@@ -20,11 +12,9 @@ struct QRScannerOverlayView: View {
             let scanCenter = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
 
             ZStack {
-                // 1. Затемнение всей области
                 Rectangle()
                     .fill(Color.black.opacity(0.55))
 
-                // 2. Прозрачное окно в центре
                 Rectangle()
                     .fill(.clear)
                     .frame(width: scanRectSize, height: scanRectSize)
@@ -34,7 +24,6 @@ struct QRScannerOverlayView: View {
                             .frame(width: scanRectSize, height: scanRectSize)
                     )
 
-                // 3. Уголки рамки сканирования
                 ForEach(0..<4) { index in
                     HStack {
                         Rectangle()

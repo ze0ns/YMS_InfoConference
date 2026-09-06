@@ -1,9 +1,3 @@
-//
-//  SelectRoomView.swift
-//  yealinkCalc
-//
-//  Created by Aleksandr Oschepkov on 10.10.2024.
-//
 import SwiftUI
 import SwiftData
 

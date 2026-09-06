@@ -1,14 +1,5 @@
-//
-//  WeatherIconMapper.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 06.09.2026.
-//
-
 import Foundation
 
-/// Маппинг кодов погоды WMO → SF Symbols (данные, а не switch — OCP:
-/// добавление кода = запись в словарь, без изменения логики).
 enum WeatherIconMapper {
 
     private static let iconNames: [Int: String] = [
@@ -25,7 +16,6 @@ enum WeatherIconMapper {
         95: "cloud.bolt.fill"
     ]
 
-    /// SF Symbol для кода погоды WMO; fallback — «questionmark.circle.fill».
     static func name(for code: Int) -> String {
         iconNames[code] ?? "questionmark.circle.fill"
     }

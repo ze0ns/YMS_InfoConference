@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// Экран ввода/сканирования ключей доступа к серверу (ylSecretKey, ylAccessKey).
-/// Ключи сохраняются в Keychain и используются в API вместо ключей из Config.plist.
 struct KeysScannerView: View {
     @State private var viewModel = ScanViewModel()
 
@@ -10,19 +8,16 @@ struct KeysScannerView: View {
 
         VStack(spacing: 24) {
 
-            // Поле 1 — ylSecretKey
             InputRow(title: "Секретный ключ (ylSecretKey)", text: $bindableViewModel.text1) {
                 viewModel.openScanner(for: 1)
             }
 
-            // Поле 2 — ylAccessKey
             InputRow(title: "Ключ доступа (ylAccessKey)", text: $bindableViewModel.text2) {
                 viewModel.openScanner(for: 2)
             }
 
             Spacer()
 
-            // Кнопка Сохранить
             Button(action: {
                 viewModel.saveData()
             }) {
@@ -37,7 +32,6 @@ struct KeysScannerView: View {
             .disabled(!viewModel.isSaveEnabled)
             .padding(.horizontal)
 
-            // Кнопка удаления — вернёт ключи из Config.plist
             Button(role: .destructive, action: {
                 viewModel.deleteData()
             }) {
@@ -64,7 +58,6 @@ struct KeysScannerView: View {
     }
 }
 
-// Компонент для переиспользования (TextField + Кнопка сканирования)
 struct InputRow: View {
     let title: String
     @Binding var text: String

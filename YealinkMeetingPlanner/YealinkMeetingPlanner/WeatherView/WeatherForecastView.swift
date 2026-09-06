@@ -1,9 +1,3 @@
-//
-//  WeatherForecastView.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 28.05.2026.
-//
 import SwiftUI
 
 struct WeatherForecastView: View {
@@ -15,7 +9,6 @@ struct WeatherForecastView: View {
 
     var body: some View {
         ZStack {
-            // Данные приоритетнее ошибки: при сбое сети остаётся последний прогноз
             if let data = viewModel.weatherData {
                 weatherContent(data: data)
             } else if viewModel.isLoading {
@@ -30,7 +23,7 @@ struct WeatherForecastView: View {
         .background(Color.bgColorScheduler)
     }
 
-    // MARK: - Состояния
+    // MARK: - States
 
     @ViewBuilder
     private var loadingView: some View {
@@ -57,7 +50,7 @@ struct WeatherForecastView: View {
         .padding()
     }
 
-    // MARK: - Основной контент
+    // MARK: - Content
 
     @ViewBuilder
     private func weatherContent(data: WeatherData) -> some View {
@@ -71,7 +64,7 @@ struct WeatherForecastView: View {
         }
     }
 
-    // MARK: - Текущая погода
+    // MARK: - Current weather
 
     @ViewBuilder
     private func currentWeatherView(data: WeatherData) -> some View {
@@ -110,7 +103,7 @@ struct WeatherForecastView: View {
         .cornerRadius(12)
     }
 
-    // MARK: - Прогноз на 3 дня
+    // MARK: - 3-day forecast
 
     @ViewBuilder
     private func dailyForecastView(data: WeatherData) -> some View {

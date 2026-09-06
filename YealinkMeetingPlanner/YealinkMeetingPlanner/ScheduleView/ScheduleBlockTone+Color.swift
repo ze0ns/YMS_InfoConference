@@ -1,13 +1,6 @@
-//
-//  ScheduleBlockTone+Color.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 06.09.2026.
-//
-
 import SwiftUI
 
-// MARK: - Тон занятого блока → цвет (OCP: расширение вместо switch во View)
+// MARK: - Цвет тона
 
 extension ScheduleBlockTone {
     var color: Color {

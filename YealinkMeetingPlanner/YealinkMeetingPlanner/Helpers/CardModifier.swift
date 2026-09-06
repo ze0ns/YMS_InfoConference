@@ -1,9 +1,3 @@
-//
-//  CardModifier.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 29.05.2026.
-//
 import SwiftUI
 
 struct CardModifier: ViewModifier {

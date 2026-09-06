@@ -1,14 +1,6 @@
-//
-//  DataModelScheduler.swift
-//  yealinkCalc
-//
-//  Created by Aleksandr Oschepkov on 05.03.2024.
-//
-
 import Foundation
 import SwiftData
 
-/// SwiftData-модель записи расписания конференции (локальный кэш).
 @Model
 class ConfDataModel: Identifiable, Hashable {
     var conferencePlanId: String

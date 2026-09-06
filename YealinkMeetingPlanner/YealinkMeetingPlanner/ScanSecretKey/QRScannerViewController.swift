@@ -1,11 +1,3 @@
-//
-//  QRScannerViewController.swift
-//  scantext
-//
-//  Created by Oschepkov Aleksandr on 27.06.2026.
-//
-
-
 import SwiftUI
 import AVFoundation
 
@@ -35,7 +27,6 @@ final class QRScannerViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        // Запускаем сессию в фоне, чтобы не блокировать UI
         if !captureSession.isRunning {
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 self?.captureSession.startRunning()
@@ -73,7 +64,6 @@ final class QRScannerViewController: UIViewController {
         captureSession.addOutput(metadataOutput)
 
         metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
-        // Сканируем только QR-коды
         metadataOutput.metadataObjectTypes = [.qr]
 
         previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
@@ -98,7 +88,6 @@ final class QRScannerViewController: UIViewController {
             overlayController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
 
-        // Кнопка закрытия
         let closeButton = UIButton(type: .system)
         closeButton.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
         closeButton.tintColor = .white
@@ -113,7 +102,6 @@ final class QRScannerViewController: UIViewController {
             closeButton.heightAnchor.constraint(equalToConstant: 36)
         ])
 
-        // Подсказка — под нижней границей рамки сканирования
         let hintLabel = UILabel()
         hintLabel.text = "Наведите камеру на QR-код"
         hintLabel.textColor = .white
@@ -154,7 +142,6 @@ extension QRScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
 
         isScanned = true
 
-        // Тактильный отклик
         AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
 
         onCodeScanned?(stringValue)

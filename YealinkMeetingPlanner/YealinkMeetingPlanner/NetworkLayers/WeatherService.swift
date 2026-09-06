@@ -1,16 +1,8 @@
-//
-//  WeatherService.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 05.06.2026.
-//
 import Foundation
 
-// MARK: - Протокол (для подмены в тестах)
+// MARK: - Протокол
 
-/// Сервис погоды.
 protocol WeatherServiceProtocol {
-    /// Загружает текущую погоду и прогноз для указанных координат.
     func fetchWeather(latitude: Double, longitude: Double) async throws -> WeatherData
 }
 

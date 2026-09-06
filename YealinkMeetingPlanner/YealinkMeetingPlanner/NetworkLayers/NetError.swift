@@ -1,17 +1,10 @@
-//
-//  NetError.swift
-//  yealinkCalc
-//
-//  Created by Oschepkov Aleksandr on 04.03.2024.
-//
-
 import Foundation
 
-/// Ошибки сетевого уровня YMS API.
 enum NetError: LocalizedError {
     case invalidURL
     case invalidResponse(statusCode: Int)
     case decodingFailed(underlying: Error)
+    case missingConfiguration
 
     var errorDescription: String? {
         switch self {
@@ -21,6 +14,8 @@ enum NetError: LocalizedError {
             return "Сервер вернул ошибку (код \(statusCode))"
         case .decodingFailed:
             return "Не удалось разобрать ответ сервера"
+        case .missingConfiguration:
+            return "Ключи доступа не настроены — отсканируйте их в настройках"
         }
     }
 }

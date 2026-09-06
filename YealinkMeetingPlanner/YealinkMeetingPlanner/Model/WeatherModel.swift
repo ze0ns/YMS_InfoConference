@@ -1,12 +1,3 @@
-//
-//  WeatherModel.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 05.06.2026.
-//
-
-
-
 import Foundation
 
 // MARK: - WeatherModel

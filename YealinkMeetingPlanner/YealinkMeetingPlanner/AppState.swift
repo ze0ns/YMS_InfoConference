@@ -1,13 +1,6 @@
-//
-//  AppState.swift
-//  YealinkMeetingPlanner
-//
-
 import Foundation
 import Observation
 
-/// Глобальное состояние приложения. Создаётся один раз в App,
-/// внедряется через `.environment(...)` и передаётся в ViewModel'ы.
 @Observable
 final class AppState {
     private static let selectedRoomIdKey = "app_selected_room_id"

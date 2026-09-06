@@ -1,17 +1,7 @@
-//
-//  ConferenceScheduleStore.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 06.09.2026.
-//
-
 import Foundation
 import SwiftData
 import os
 
-/// Управление расписанием конференций (SRP): загрузка из API, кэширование,
-/// демо-режим и периодическое обновление. Выделено из `ConferenceViewModel`,
-/// чтобы хранение данных и жизненный цикл обновлений не смешивались с презентацией.
 @MainActor
 @Observable
 final class ConferenceScheduleStore {
@@ -28,10 +18,8 @@ final class ConferenceScheduleStore {
     @ObservationIgnored
     nonisolated(unsafe) private var refreshTimer: Timer?
 
-    /// ID выбранной комнаты — View использует его как .task(id:).
     var roomId: String? { appState.selectedRoom?.id }
 
-    /// Имя комнаты для шапки (в демо-режиме — синтетическое).
     var displayRoomName: String {
         if settings.isDemoEnabled { return "Демо-конференц-зал" }
         return appState.selectedRoom?.namePinyin ?? "Выберите комнату"
@@ -49,7 +37,6 @@ final class ConferenceScheduleStore {
 
     // MARK: - Жизненный цикл
 
-    /// Загрузить кэш из базы и запустить периодическое обновление.
     func start() {
         loadCachedData()
 
@@ -60,7 +47,6 @@ final class ConferenceScheduleStore {
         }
     }
 
-    /// Полная загрузка расписания (вызывается из View через .task(id:)).
     func loadSchedule() async {
         if settings.isDemoEnabled {
             confDataItems = DemoData.conferences()
@@ -105,7 +91,6 @@ final class ConferenceScheduleStore {
 
     // MARK: - Работа с кэшем (SwiftData)
 
-    /// Загружает кэш расписания из базы (в демо-режиме пропускается).
     func loadCachedData() {
         guard !settings.isDemoEnabled else { return }
         do {
@@ -115,7 +100,6 @@ final class ConferenceScheduleStore {
         }
     }
 
-    /// Очищает кэш расписания и текущие данные текущей комнаты.
     func clearData() {
         do {
             try fetcher.clearCache()

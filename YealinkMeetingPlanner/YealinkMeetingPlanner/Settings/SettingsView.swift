@@ -1,12 +1,5 @@
-//
-//  SettingsView.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 16.08.2026.
-//
 import SwiftUI
 
-/// Экран настроек: выбор города, смена пин-кода, выбор комнаты
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
@@ -65,6 +58,10 @@ struct SettingsView: View {
 
                 // MARK: Ключи доступа к серверу
                 Section("Сервер") {
+                    TextField("Адрес сервера", text: $settings.serverURL)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                     NavigationLink {
                         KeysScannerView()
                     } label: {

@@ -1,10 +1,3 @@
-//
-//  CurrentMeetingView.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 28.05.2026.
-//
-
 import SwiftUI
 
 struct CurrentMeetingView: View {
@@ -32,16 +25,13 @@ struct CurrentMeetingView: View {
                 .foregroundColor(statusColor)
                 .padding(.top, 4)
             
-            // 🔽 НОВЫЙ БЛОК: КРУГ С ИЗОБРАЖЕНИЕМ И СВЕЧЕНИЕМ 🔽
             ZStack {
-                // Фоновый круг с эффектом свечения
                 Circle()
                     .fill(statusColor)
                     .frame(width: LayoutDimensions.meetingCircleSize, height: LayoutDimensions.meetingCircleSize)
                     .shadow(color: statusColor.opacity(0.6), radius: 10, x: 0, y: 0)
                     .shadow(color: statusColor.opacity(0.3), radius: 20, x: 0, y: 0)
                 
-                // Изображение поверх круга
                 Image(.meeting)
                     .resizable()
                     .renderingMode(.template)
@@ -50,8 +40,7 @@ struct CurrentMeetingView: View {
                     .frame(width: LayoutDimensions.meetingCircleSize, height: LayoutDimensions.meetingCircleSize)
 
             }
-            // 🔽 КОНЕЦ БЛОКА 🔽
-            
+
             VStack(alignment: .center, spacing: 20) {
                 Text(title)
                     .font(.title3)

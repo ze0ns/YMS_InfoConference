@@ -1,10 +1,3 @@
-//
-//  ScheduleView.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 28.05.2026.
-//
-
 import SwiftUI
 
 struct ScheduleView: View {
@@ -52,12 +45,11 @@ struct ScheduleView: View {
         }
     }
 
-    // MARK: - Вью для объединенного занятого блока
+    // MARK: - Busy block
 
     @ViewBuilder
     private func busyBlockView(block: ScheduleBlock) -> some View {
         HStack(spacing: 0) {
-            // Левая колонка: время (без цветного фона)
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(block.times, id: \.self) { time in
                     Text(time)
@@ -70,7 +62,6 @@ struct ScheduleView: View {
             .padding(.leading, 8)
             .padding(.trailing, 8)
 
-            // Правая колонка: заголовок + динамический фон
             ZStack {
                 if let title = block.title {
                     Text(title)
@@ -86,7 +77,7 @@ struct ScheduleView: View {
         }
     }
 
-    // MARK: - Вью для свободной строки
+    // MARK: - Free row
 
     @ViewBuilder
     private func freeRowView(time: String) -> some View {
