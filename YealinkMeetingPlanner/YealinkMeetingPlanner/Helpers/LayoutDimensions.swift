@@ -34,4 +34,7 @@ enum LayoutDimensions {
     static let weatherDailyDividerSpacing: CGFloat = 12
     static let weatherDailyDayWidth: CGFloat = 80
     static let weatherDailyTempWidth: CGFloat = 100
+
+    // QRScanner
+    static let scannerScanRectSize: CGFloat = 260
 }

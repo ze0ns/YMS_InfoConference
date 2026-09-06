@@ -1,8 +1,8 @@
 # Handoff — YMS_InfoConference / YealinkMeetingPlanner
 
 **Created:** 2026-09-05
-**Updated:** 2026-09-06 (Session 3: Phase 2 SRP + Phase 3 OCP done. ✅ App compiles)
-**Status:** 🟢 All phases 1-5 + Session-2 Phase 1 + Session-3 Phases 2-3 done. ✅ App compiles (build succeeded)
+**Updated:** 2026-09-06 (Session 4: Phase-4 clean-code items. ✅ App compiles)
+**Status:** 🟢 All phases 1-5 + Session-2 Phase 1 + Session-3 Phases 2-3 + Session-4 clean-up done. ✅ App compiles (build succeeded)
 
 ---
 
@@ -36,6 +36,14 @@ Refactor the **YealinkMeetingPlanner** SwiftUI app to fix critical architecture 
   - 4.4 `Helpers/LayoutDimensions.swift` enum for magic numbers in `ConferenceRoomScreen` (paddings/spacings/card factors/settings button), `CurrentMeetingView` (circle/icon/row padding), `WeatherForecastView` (icon/column widths)
   - Bugfix with Phase 4: `WeatherData.longitude`/`elevation` were `Int` but Open-Meteo returns fractional values (Moscow `37.625`, SPb `30.303894`, Kazan `49.125`) → decode crashed for non-Krasnodar cities (`decodingFailed` «Не удалось разобрать ответ сервера»). Changed both to `Double` in `WeatherModel.swift`
   - Verified: `BUILD SUCCEEDED`, no new warnings (pre-existing warnings only: ConfDataModel accessor macro on `let`, UIScreen.main deprecations)
+- ✅ **Session 4 (Clean Code / remaining review items 9-12)**:
+  - 4.a Dead files removed: `Model/ConfModel.swift` (unused struct), `ScheduleView/ScheduleRow.swift` (unused component). `ScanSecretKey/TextScannerView.swift` **kept** — its `QRScannerView` is used by `ScannerView.swift:53` (earlier review note was wrong)
+  - 4.b Type-inconsistency fix in `ConfDataModel`: removed write-only `endDateTimeStamp: String` field + init param (only ever written, never read). Instead of a `String`→`Int` change (incompatible SwiftData schema migration → crash on existing stores), the unused attribute was **removed** (attribute removal IS lightweight-migratable). Call sites updated: `ConferenceDatabaseService.repalceAll` (dropped `endDateTimeStamp:`), `DemoData.makeConference` (dropped `endDateTimeStamp: ""`)
+  - 4.c `let vID = UUID()` → `var vID = UUID()` in `ConfDataModel` — fixes @Model accessor-macro warning (Swift 6 fatal error). `DatumRoom.vID` (plain Codable struct) left as `let`
+  - 4.d `QRScannerOverlayView` rewritten: `UIScreen.main` → `GeometryReader`; `@State scanRectGuide` removed; frame derived from `LayoutDimensions.scannerScanRectSize`
+  - 4.e Shared constant: `LayoutDimensions.scannerScanRectSize = 260` — replaces the duplicated `scanRectSize` in `QRScannerViewController` and `QRScannerOverlayView`
+  - 4.f Doc-comments added: `NetError` enum, `YmsRequestSigner.headers(method:path:bodyData:)`, `YmsHTTPClient.post<Body:Response>(path:body:)`
+  - Verified: `BUILD SUCCEEDED`, **no remaining code warnings** (previously only pre-existing `let vID` accessor macro + `UIScreen.main` deprecations — both eliminated; only benign appintents "Metadata extraction skipped" notice remains)
 - ✅ **Phase 5 complete** (Modernize patterns):
   - 5.1 All ViewModels migrated `ObservableObject`/`@Published`/Combine → `@Observable` (`@MainActor @Observable final` for MainActor ones): `ConferenceViewModel`, `HeaderViewModel`, `WeatherViewModel`, `SelectRoomViewModel`, `ScanViewModel`
   - Timers in `ConferenceViewModel`/`HeaderViewModel` moved from Combine `Timer.publish` to native `Timer.scheduledTimer` with `MainActor.assumeIsolated` + `[weak self]`; invalidation in `deinit` via `@ObservationIgnored nonisolated(unsafe)` stored timer (deinit is nonisolated in a @MainActor class)
@@ -139,31 +147,31 @@ The following issues were identified in a thorough review of all 46 Swift files 
 - `ConferenceRoomScreen.currentMeetingView` switch deleted
 - `ScheduleBlockTone.color` extension moved from `ScheduleView.swift` to NEW `ScheduleView/ScheduleBlockTone+Color.swift`
 
-#### Low priority (clean code)
+#### Previously "Low priority (clean code)" — ✅ all resolved (Session 4)
 
-**9. Dead/unused files**
-- `Model/ConfModel.swift` — unused struct
-- `ScheduleView/ScheduleRow.swift` — unused component
-- `ScanSecretKey/TextScannerView.swift` — duplicate of `ScannerView.swift`
+**9. Dead/unused files** — ✅
+- `Model/ConfModel.swift` — **deleted** (Session 4)
+- `ScheduleView/ScheduleRow.swift` — **deleted** (Session 4)
+- `ScanSecretKey/TextScannerView.swift` — **kept**: `QRScannerView` (UIViewControllerRepresentable) is used by `ScannerView.swift:53` (the «duplicate» note was wrong)
 
-**10. Type inconsistency**
-- `ConfDataModel.endDateTimeStamp: String` should be `Int` (stores timestamp)
+**10. Type inconsistency** — ✅ resolved
+- `ConfDataModel.endDateTimeStamp: String` — removed (write-only; attribute removal is lightweight-migratable, unlike `String`→`Int` type change which would crash existing stores). Decode model `ConferenceTime.endDateTimeStamp: Double` retained
 
-**11. `let vID = UUID()` in `@Model`**
-- SwiftData won't track `let` properties; fine for identity but may cause migration issues
+**11. `let vID = UUID()` in `@Model`** — ✅
+- `ConfDataModel.vID`: `let` → `var` (accessor-macro warning / Swift 6 fatal). `DatumRoom.vID` (plain Codable struct) left as `let` — no macro
 
-**12. Pre-existing warnings**
-- `ConfDataModel` accessor macro on `let vID` (Swift 6)
-- `UIScreen.main` deprecations in `QRScannerOverlayView`
+**12. Pre-existing warnings** — ✅ both gone (BUILD SUCCEEDED)
+- `ConfDataModel` accessor macro on `let vID` (fixed by 4.c)
+- `UIScreen.main` deprecations in `QRScannerOverlayView` (fixed by 4.d: `GeometryReader`)
 
 ---
 
 ### Extras discovered during Phases 3-5 (optional)
 - `YmsApiResponse` signing reads keys via injected `config` — stubbable via `APICredentialsProviding`
-- `scanRectSize: CGFloat = 260` duplicated in `QRScannerViewController`/`QRScannerOverlayView` — consider a shared constant
+- ~~`scanRectSize: CGFloat = 260` duplicated~~ — ✅ resolved: `LayoutDimensions.scannerScanRectSize` (Session 4)
 - `ScheduleSlotFormatter.timeSlots()` hardcodes 7:00–20:00/30-min step — could move to constants
 - `ConferenceRoomScreen` has unused `@Environment(\.dismiss)` residual — can be removed
-- Unit tests still absent — `ConferenceTimeCalculator`/`ScheduleSlotFormatter`/`TimeUtils` are the clean testable core; all deps stubbable (YmsApiService/ConferenceRepository/DataStorage/KeychainService/WeatherServiceProtocol)
+- Unit tests still absent — `ConferenceTimeCalculator`/`ScheduleSlotFormatter`/`TimeUtils`/`WeatherIconMapper`/`DemoData` are the clean testable core; all deps stubbable (YmsApiService/ConferenceRepository/RoomRepository/DataStorage/KeychainService/WeatherServiceProtocol/APICredentialsProviding)
 
 ---
 
@@ -211,7 +219,13 @@ The following issues were identified in a thorough review of all 46 Swift files 
 | `ScheduleView/ScheduleSlotFormatter.swift` | ✅ Phases 3-4 | delegates `minutes(of:)` to `TimeUtils` |
 | `Model/ConferenceScheduler.swift` | ✅ Phase 4 | renamed from `ConferenceSheduler.swift`; type `ConferenceScheduler` |
 | `Model/CodeNDecode.swift` | ✅ Phase 4 | trimmed to `JSONNull` only (unused `JSONAny`/`JSONCodingKey` removed) |
-| `ScanSecretKey/QRScannerViewController.swift` | ✅ Fixed | Hosts SwiftUI overlay via UIHostingController; app compiles |
+| `ScanSecretKey/QRScannerViewController.swift` | ✅ Fixed + Session 4 | Hosts SwiftUI overlay via UIHostingController; `scanRectSize` uses `LayoutDimensions.scannerScanRectSize` |
+
+| `Model/SwiftData/ConfDataModel.swift` | ✅ Session 4 | `endDateTimeStamp` removed (write-only); `vID` `var`; formatted init |
+| `ScanSecretKey/QRScannerOverlayView.swift` | ✅ Session 4 | `GeometryReader` instead of `UIScreen.main`; no `@State scanRectGuide` |
+| `Helpers/LayoutDimensions.swift` | ✅ Phase 4 + Session 4 | `scannerScanRectSize` added |
+| ~~`Model/ConfModel.swift`~~ | ✅ deleted Session 4 | unused struct |
+| ~~`ScheduleView/ScheduleRow.swift`~~ | ✅ deleted Session 4 | unused component |
 
 ---
 
@@ -224,7 +238,8 @@ The following issues were identified in a thorough review of all 46 Swift files 
 - `ConferenceViewModel` forwards data state to `ConferenceScheduleStore` via computed props — Observation is transitive (body reads tracked `store.confDataItems`), so views still re-render on data change
 - `YmsApiResponse` is now a thin facade; networking lives in `YmsApiClient.swift` (`YmsRequestSigner`/`YmsHTTPClient`/`YmsConferenceApi`/`YmsRoomApi`). Credentials via injected `config: APICredentialsProviding` (default `APIConfig()`)
 - Build command: `xcodebuild -project YealinkMeetingPlanner.xcodeproj -scheme YealinkMeetingPlanner -destination 'platform=iOS Simulator,name=iPhone 17' build` — **passes now**
-- `scanRectSize: CGFloat = 260` is duplicated in `QRScannerViewController` and `QRScannerOverlayView` — must stay in sync (consider a shared constant later)
+- `scanRectSize` is unified via `LayoutDimensions.scannerScanRectSize` (used by both `QRScannerViewController` and `QRScannerOverlayView`)
+- **Schema note (Session 4):** `ConfDataModel.endDateTimeStamp` attribute was **removed**. SwiftData lightweight migration handles attribute removal; change only additive/deletive, never a type change (`String`→`Int` would crash existing stores). `ConfDataModel.vID` is now `var`
 - `ConferenceRoomScreen` previews return `AnyView` with `try? ModelContainer` — preserve this pattern in new previews
 - New files under `Conference/`, `Helpers/`, etc. are auto-included via `PBXFileSystemSynchronizedRootGroup` — no pbxproj edits needed (folder renamess like `WetherView`→`WeatherView` are just filesystem moves)
 - `WeatherData.longitude`/`elevation` must stay `Double` — Open-Meteo returns fractional coordinates (Moscow `37.625`); `Int` caused the «Не удалось разобрать ответ сервера» bug for most cities

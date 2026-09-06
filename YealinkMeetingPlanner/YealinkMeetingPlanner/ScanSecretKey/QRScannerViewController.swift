@@ -13,8 +13,8 @@ import AVFoundation
 final class QRScannerViewController: UIViewController {
     var onCodeScanned: ((String) -> Void)?
     
-    /// Должно совпадать со значением `scanRectSize` в `QRScannerOverlayView`
-    private let scanRectSize: CGFloat = 260
+    /// Размер рамки сканирования — единый со `QRScannerOverlayView` (см. `LayoutDimensions`)
+    private let scanRectSize = LayoutDimensions.scannerScanRectSize
 
     private let captureSession = AVCaptureSession()
     private var previewLayer: AVCaptureVideoPreviewLayer!

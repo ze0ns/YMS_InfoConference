@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// Ошибки сетевого уровня YMS API.
 enum NetError: LocalizedError {
     case invalidURL
     case invalidResponse(statusCode: Int)

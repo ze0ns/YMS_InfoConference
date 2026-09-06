@@ -46,7 +46,6 @@ final class SwiftDataConferenceRepository: ConferenceRepository {
                     conferencePlanId: info.conferencePlanID,
                     conferenceSubject: info.conferenceSubject.subject,
                     startDateTimeStamp: Int(info.conferenceTimePattern.conferenceTime.startDateTimeStamp),
-                    endDateTimeStamp: String(info.conferenceTimePattern.conferenceTime.endDateTimeStamp),
                     startTime: info.conferenceTimePattern.conferenceTime.startTime,
                     endTime: info.conferenceTimePattern.conferenceTime.endTime,
                     organizerId: info.organizer.id,

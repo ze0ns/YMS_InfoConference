@@ -107,7 +107,6 @@ enum DemoData {
             conferencePlanId: "demo",
             conferenceSubject: meeting.title,
             startDateTimeStamp: 0,
-            endDateTimeStamp: "",
             startTime: minutesToTime(meeting.startMinutes),
             endTime: minutesToTime(meeting.endMinutes),
             organizerId: "demo",

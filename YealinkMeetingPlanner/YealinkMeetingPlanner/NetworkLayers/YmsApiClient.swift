@@ -19,6 +19,11 @@ struct YmsRequestSigner {
         self.config = config
     }
 
+    /// Строит заголовки HMAC-подписи для запроса.
+    /// - Parameters:
+    ///   - method: HTTP-метод (например, "POST").
+    ///   - path: путь запроса (без хоста).
+    ///   - bodyData: сериализованное тело запроса; `nil`, если тела нет.
     func headers(method: String, path: String, bodyData: Data?) -> [String: String] {
         let accessKey = config.currentYlAccessKey
         let secretKey = config.currentYlSecretKey
@@ -64,6 +69,11 @@ struct YmsHTTPClient {
         self.signer = YmsRequestSigner(config: config)
     }
 
+    /// POST-запрос к YMS API с подписью и декодированием ответа.
+    /// - Parameters:
+    ///   - path: путь запроса (без хоста).
+    ///   - body: сериализуемое тело запроса.
+    /// - Returns: декодированный ответ типа `Response`.
     func post<Body: Encodable, Response: Decodable>(
         path: String,
         body: Body
