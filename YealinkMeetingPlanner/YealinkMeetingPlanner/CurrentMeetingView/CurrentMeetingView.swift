@@ -7,10 +7,6 @@
 
 import SwiftUI
 
-enum RoomStatus {
-    case free, occupied
-}
-
 struct CurrentMeetingView: View {
     let title: String
     let time: String

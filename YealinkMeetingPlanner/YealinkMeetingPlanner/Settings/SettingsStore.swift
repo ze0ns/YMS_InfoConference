@@ -32,15 +32,11 @@ enum CityCatalog {
 class SettingsStore {
     static let shared = SettingsStore()
 
-    private static let pinKeychainKey = "settings_access_pin"
     private static let cityDefaultsKey = "settings_selected_city_id"
     private static let demoEnabledKey = "settings_demo_enabled"
 
-    private let keychain: KeychainService
     private let storage: DataStorage
-
-    /// Пин-код доступа к настройкам (по умолчанию "0000")
-    private(set) var pin: String
+    private let pinManager: PinManager
 
     /// Выбранный город
     var selectedCity: City {
@@ -53,11 +49,8 @@ class SettingsStore {
     }
 
     init(keychain: KeychainService? = nil, storage: DataStorage? = nil) {
-        self.keychain = keychain ?? KeychainManager.shared
         self.storage = storage ?? UserDefaults.standard
-
-        // Пин-код хранится в Keychain; если не задан — используем "0000"
-        pin = self.keychain.load(key: Self.pinKeychainKey) ?? "0000"
+        self.pinManager = PinManager(keychain: keychain)
 
         let savedCityId = self.storage.string(forKey: Self.cityDefaultsKey)
         selectedCity = CityCatalog.cities.first { $0.id == savedCityId }
@@ -66,18 +59,14 @@ class SettingsStore {
         isDemoEnabled = self.storage.bool(forKey: Self.demoEnabledKey)
     }
 
-    /// Смена пин-кода: сохраняет новый в Keychain
+    /// Смена пин-кода: делегируется `PinManager`
     @discardableResult
     func changePin(to newPin: String) -> Bool {
-        guard newPin.count == 4, newPin.allSatisfy(\.isNumber) else { return false }
-        let saved = keychain.save(key: Self.pinKeychainKey, value: newPin)
-        if saved {
-            pin = newPin
-        }
-        return saved
+        pinManager.changePin(to: newPin)
     }
 
+    /// Проверка пин-кода: делегируется `PinManager`
     func checkPin(_ entered: String) -> Bool {
-        entered == pin
+        pinManager.checkPin(entered)
     }
 }

@@ -6,107 +6,61 @@
 //
 import SwiftUI
 import SwiftData
-import os
 
+/// Презентация основного экрана конференции (SRP): работает с хранилищем
+/// `ConferenceScheduleStore`, а View получает готовые данные для отображения.
 @MainActor
 @Observable
 final class ConferenceViewModel {
-    private(set) var confDataItems: [ConfDataModel] = []
-    var errorMessage: String? = nil
-    var isLoading = false
-
-    private static let refreshInterval: TimeInterval = 60
-
-    private let fetcher: ConferenceDataFetcher
+    private let scheduleStore: ConferenceScheduleStore
     private let appState: AppState
     private let settings: SettingsStore
-
-    @ObservationIgnored
-    nonisolated(unsafe) private var refreshTimer: Timer?
-
-    /// ID выбранной комнаты — View использует его как .task(id:).
-    var roomId: String? { appState.selectedRoom?.id }
-
-    /// Имя комнаты для шапки (в демо-режиме — синтетическое).
-    var displayRoomName: String {
-        if settings.isDemoEnabled { return "Демо-конференц-зал" }
-        return appState.selectedRoom?.namePinyin ?? "Выберите комнату"
-    }
 
     init(api: YmsApiService? = nil,
          appState: AppState,
          modelContext: ModelContext,
          settings: SettingsStore? = nil,
          repository: ConferenceRepository? = nil) {
+        let settingsStore = settings ?? SettingsStore.shared
+        self.settings = settingsStore
         self.appState = appState
-        self.settings = settings ?? SettingsStore.shared
-        self.fetcher = ConferenceDataFetcher(
-            api: api,
-            repository: repository ?? SwiftDataConferenceRepository(modelContext: modelContext)
+        self.scheduleStore = ConferenceScheduleStore(
+            fetcher: ConferenceDataFetcher(
+                api: api,
+                repository: repository ?? SwiftDataConferenceRepository(modelContext: modelContext)
+            ),
+            appState: appState,
+            settings: settingsStore
         )
     }
 
-    deinit {
-        refreshTimer?.invalidate()
-    }
+    // MARK: - Данные расписания (транзитивно наблюдаемые)
+
+    var confDataItems: [ConfDataModel] { scheduleStore.confDataItems }
+    var isLoading: Bool { scheduleStore.isLoading }
+    var errorMessage: String? { scheduleStore.errorMessage }
 
     // MARK: - Жизненный цикл
 
     /// Загрузить кэш из базы и запустить периодическое обновление.
-    func start() {
-        loadCachedData()
-
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: Self.refreshInterval, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.refreshSchedule()
-            }
-        }
-    }
+    func start() { scheduleStore.start() }
 
     /// Полная загрузка расписания (вызывается из View через .task(id:)).
-    func loadSchedule() async {
-        if settings.isDemoEnabled {
-            confDataItems = DemoData.conferences()
-            isLoading = false
-            errorMessage = nil
-            return
-        }
+    func loadSchedule() async { await scheduleStore.loadSchedule() }
 
-        guard let roomId else {
-            clearData()
-            return
-        }
+    /// Загружает кэш расписания из базы (в демо-режиме пропускается).
+    func loadCachedData() { scheduleStore.loadCachedData() }
 
-        isLoading = true
-        errorMessage = nil
+    /// Очищает кэш расписания и текущие данные текущей комнаты.
+    func clearData() { scheduleStore.clearData() }
 
-        do {
-            confDataItems = try await fetcher.fetchSchedule(roomId: roomId)
-        } catch {
-            errorMessage = error.localizedDescription
-            AppLog.network.error("Ошибка загрузки расписания: \(error.localizedDescription)")
-        }
+    // MARK: - Данные для отображения
 
-        isLoading = false
-    }
+    /// ID выбранной комнаты — View использует его как .task(id:).
+    var roomId: String? { scheduleStore.roomId }
 
-    private func refreshSchedule() {
-        if settings.isDemoEnabled {
-            confDataItems = DemoData.conferences()
-            return
-        }
-        guard let roomId else { return }
-        Task {
-            do {
-                let conferences = try await fetcher.fetchSchedule(roomId: roomId)
-                confDataItems = conferences
-            } catch {
-                AppLog.network.error("Ошибка обновления расписания: \(error.localizedDescription)")
-            }
-        }
-    }
-
-    // MARK: - Текущая встреча
+    /// Имя комнаты для шапки (в демо-режиме — синтетическое).
+    var displayRoomName: String { scheduleStore.displayRoomName }
 
     /// Готовые данные для карточки текущей встречи. View только отображает результат.
     var currentMeetingDisplay: MeetingDisplayState {
@@ -114,8 +68,9 @@ final class ConferenceViewModel {
             guard appState.selectedRoom != nil else { return .noRoom }
         }
 
-        guard let meeting = ConferenceTimeCalculator.currentMeeting(in: confDataItems) else {
-            return confDataItems.isEmpty ? .noMeetings : .free
+        let items = scheduleStore.confDataItems
+        guard let meeting = ConferenceTimeCalculator.currentMeeting(in: items) else {
+            return items.isEmpty ? .noMeetings : .free
         }
 
         return .occupied(ConferenceTimeCalculator.cardInfo(for: meeting))
@@ -123,28 +78,6 @@ final class ConferenceViewModel {
 
     /// Занятые слоты расписания для отображения. View не маппит модели напрямую.
     var busySlots: [BusySlot] {
-        ConferenceTimeCalculator.busySlots(from: confDataItems)
-    }
-
-    // MARK: - Работа с кэшем (SwiftData)
-
-    /// Загружает кэш расписания из базы (в демо-режиме пропускается).
-    func loadCachedData() {
-        guard !settings.isDemoEnabled else { return }
-        do {
-            confDataItems = try fetcher.loadCachedConferences()
-        } catch {
-            AppLog.storage.error("Ошибка чтения кэша расписания: \(error.localizedDescription)")
-        }
-    }
-
-    /// Очищает кэш расписания и текущие данные текущей комнаты.
-    func clearData() {
-        do {
-            try fetcher.clearCache()
-            confDataItems = []
-        } catch {
-            errorMessage = "Ошибка очистки данных: \(error.localizedDescription)"
-        }
+        ConferenceTimeCalculator.busySlots(from: scheduleStore.confDataItems)
     }
 }

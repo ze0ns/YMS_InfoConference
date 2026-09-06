@@ -103,25 +103,14 @@ struct ConferenceRoomScreen: View {
 
     @ViewBuilder
     private func currentMeetingView(width: CGFloat) -> some View {
-        let cardInfo: (title: String, time: String, contactName: String, contactPhone: String, status: RoomStatus) = {
-            switch viewModel.currentMeetingDisplay {
-            case .noRoom:
-                return ("Выберите комнату", "", "", "", .free)
-            case .occupied(let meeting):
-                return (meeting.title, meeting.time, meeting.contactName, meeting.contactPhone, .occupied)
-            case .free:
-                return ("Комната свободна", "", "", "", .free)
-            case .noMeetings:
-                return ("Нет запланированных встреч", "", "", "", .free)
-            }
-        }()
+        let state = viewModel.currentMeetingDisplay
 
         CurrentMeetingView(
-            title: cardInfo.title,
-            time: cardInfo.time,
-            contactName: cardInfo.contactName,
-            contactPhone: cardInfo.contactPhone,
-            status: cardInfo.status
+            title: state.title,
+            time: state.time,
+            contactName: state.contactName,
+            contactPhone: state.contactPhone,
+            status: state.roomStatus
         )
         .frame(width: width)
         .frame(maxHeight: .infinity)

@@ -1,8 +1,8 @@
 # Handoff — YMS_InfoConference / YealinkMeetingPlanner
 
 **Created:** 2026-09-05
-**Updated:** 2026-09-06 (Session 2: Phase 1 — DI & DIP fixes done. ✅ App compiles)
-**Status:** 🟢 All planned phases (1-5) done + Phase 1 of next review cycle done. ✅ App compiles (build succeeded)
+**Updated:** 2026-09-06 (Session 3: Phase 2 SRP + Phase 3 OCP done. ✅ App compiles)
+**Status:** 🟢 All phases 1-5 + Session-2 Phase 1 + Session-3 Phases 2-3 done. ✅ App compiles (build succeeded)
 
 ---
 
@@ -113,26 +113,31 @@ The following issues were identified in a thorough review of all 46 Swift files 
 
 #### Medium priority (SRP, OCP)
 
-**4. `ConferenceViewModel` (150 lines, 8+ responsibilities)**
-- API calls, Timer lifecycle, current meeting logic, busy slots, cache CRUD, demo mode, UI state, room name
-- **Fix:** Split into `ConferenceScheduleManager` + `ConferenceState`
+**4. ✅ DONE (09-06) `ConferenceViewModel` split — `ConferenceScheduleStore` + thin VM**
+- NEW `Conference/ConferenceScheduleStore.swift` (@MainActor @Observable): owns `confDataItems`/`isLoading`/`errorMessage`, fetcher, timer, demo-mode branching, cache CRUD, `roomId`, `displayRoomName`, lifecycle `start()/loadSchedule()/loadCachedData()/clearData()`
+- `ConferenceViewModel` is now presentation-only: forwards lifecycle + data state to store; holds `appState`+`settings` for `currentMeetingDisplay`; `busySlots` via `ConferenceTimeCalculator`
+- Public surface unchanged (App/`ConferenceRoomScreen` untouched): `init(appState:modelContext:api:settings:repository:)`, `roomId`, `displayRoomName`, `currentMeetingDisplay`, `busySlots`, `start()`, `loadSchedule()`
+- ⚠️ Observation caveat: VM's computed props forward to store — view re-renders because body reads tracked `scheduleStore.confDataItems` transitively. Verified by build; manual verification advised
 
-**5. `WeatherViewModel` (100 lines, 6+ responsibilities)**
-- API fetch, UserDefaults caching, WMO→icon mapping, date formatting, UI state
-- **Fix:** Split into `WeatherDataService` + `WeatherIconMapper` + `WeatherDateFormatter`
+**5. ✅ DONE (09-06) `WeatherViewModel` split — `WeatherCache` + `WeatherIconMapper`**
+- NEW `WeatherView/WeatherCache.swift` — UserDefaults per-city cache (load/save/isCacheValid) extracted from VM
+- NEW `WeatherView/WeatherIconMapper.swift` — WMO code → SF Symbol dict (`static func name(for:)`), replaces `WeatherViewModel.weatherIconName` (static removed)
+- VM keeps `fetchWeather()` + `formatDate` (delegates to shared `DateFormatters`; no separate `WeatherDateFormatter` created — would be ceremony over existing `DateFormatters`). `WeatherServiceProtocol` already isolated networking
+- `WeatherForecastView` now calls `WeatherIconMapper.name(for:)`
 
-**6. `SettingsStore` (83 lines, 5+ responsibilities)**
-- Pin code storage, city selection, demo mode toggle, pin change, pin verification
-- **Fix:** Split into `PinManager`, `CityManager`, `AppSettings`
+**6. ✅ DONE (09-06) `SettingsStore` split — `PinManager` extracted**
+- NEW `Settings/PinManager.swift` — Keychain pin storage/change/check (was `settings_access_pin` + logic in SettingsStore)
+- `SettingsStore` keeps `selectedCity`/`isDemoEnabled` + delegates `changePin(to:)`/`checkPin(_:)` to `PinManager`; public surface & call sites unchanged
 
-**7. `YmsApiResponse` (80+ lines)**
-- Conference schedule, rooms, generic POST, HMAC-SHA256 signing, MD5, base URL
-- **Fix:** Split into `YmsConferenceApi`, `YmsRoomApi`, `YmsRequestSigner`
+**7. ✅ DONE (09-06) `YmsApiResponse` split**
+- NEW `NetworkLayers/YmsApiClient.swift`: `YmsRequestSigner` (HMAC-SHA256 headers), `YmsHTTPClient` (single POST/URL/decode/error path), `YmsConferenceApi`, `YmsRoomApi`
+- `YmsApiResponse.swift` → thin `YmsApiService` facade: protocol + request bodies (`ConferenceScheduleRequest`/`RoomListRequest`) + facade composing `YmsConferenceApi`/`YmsRoomApi`; `init(config:)` preserved
+- Signing/URL-building replaced static `Self.hostURL` entirely
 
-**8. OCP violations — switch statements in View**
-- `ConferenceRoomScreen.swift:106-117` — switch on `MeetingDisplayState`
-- `ScheduleView.swift:113-122` — switch on `ScheduleBlockTone`
-- **Fix:** Protocol-based computed properties (color, icon, text)
+**8. ✅ DONE (09-06) OCP — no more switch over states in View**
+- `MeetingDisplayState` now exposes computed `title`/`time`/`contactName`/`contactPhone`/`roomStatus` (view just reads them); `RoomStatus` enum moved from `CurrentMeetingView.swift` into `ConferenceTimeCalculator.swift` (model layer)
+- `ConferenceRoomScreen.currentMeetingView` switch deleted
+- `ScheduleBlockTone.color` extension moved from `ScheduleView.swift` to NEW `ScheduleView/ScheduleBlockTone+Color.swift`
 
 #### Low priority (clean code)
 
@@ -166,20 +171,25 @@ The following issues were identified in a thorough review of all 46 Swift files 
 
 | File | Status | Notes |
 |------|--------|-------|
-| `Conference/ConferenceRoomScreen.swift` | ✅ Phases 1-5 | @Query/@ObservedObject removed; display-only View; injected VM via plain `let` |
-| `Conference/ConferenceViewModel.swift` | ✅ Phases 1-5 | coordinator-only; `@MainActor @Observable final`; native Timer; demo-mode branch via `settings.isDemoEnabled` |
+| `Conference/ConferenceRoomScreen.swift` | ✅ Sessions 1-5,3 | no switch over state; reads `state.title/time/contactName/contactPhone/roomStatus` |
+| `Conference/ConferenceViewModel.swift` | ✅ Session 3 | thin presentation VM; forwards to `ConferenceScheduleStore`; `currentMeetingDisplay`+`busySlots` |
+| `Conference/ConferenceScheduleStore.swift` | ✅ NEW Session 3 | schedule data + cache + timer + demo + `roomId`/`displayRoomName` |
 | `Conference/DemoData.swift` | ✅ NEW demo | synthetic day schedule; guarantees occupied-now |
 | `Conference/ConferenceRoomScreen.swift` | ✅ demo | injected `SettingsStore` env; `displayRoomName`; demo-toggle refresh; `MockStorage` for previews |
 | `Conference/SelectRoomViewModel.swift` | ✅ Phases 3-5 + Session 2 | `@Observable`; **`RoomRepository` injected via `configure(repository:appState:)` (no direct ModelContext)** |
 | `Conference/SelectRoomView.swift` | ✅ Phase 5 | `@State private var viewModel = SelectRoomViewModel()` |
 | `Conference/ConferenceDataFetcher.swift` | ✅ NEW Phase 3 | API + cache (SRP) |
 | `Conference/ConferenceDatabaseService.swift` | ✅ Phase 3-4 + Session 2 | `ConferenceRepository` protocol + `SwiftDataConferenceRepository`; **+ `RoomRepository` protocol + `SwiftDataRoomRepository` (Session 2)** |
-| `Conference/ConferenceTimeCalculator.swift` | ✅ NEW Phase 3 | Pure logic + `MeetingDisplayState`/`MeetingCardInfo` |
+| `Conference/ConferenceTimeCalculator.swift` | ✅ NEW Phase 3 + Session 3 | Pure logic + `MeetingDisplayState` display props (OCP) + `RoomStatus` moved here |
+| `Conference/ConferenceViewModel.swift` | ✅ Session 3 | thin presentation VM; forwards to `ConferenceScheduleStore` |
+| `Conference/ConferenceScheduleStore.swift` | ✅ NEW Session 3 | schedule data + cache + timer + demo + `roomId`/`displayRoomName` |
 | `Header/HeaderViewModel.swift` | ✅ Phases 1,5 | `@Observable`; native `Timer` global-actor-safe via `MainActor.assumeIsolated`; deinit invalidates |
 | `Header/HeaderView.swift` | ✅ Phase 5 | `@State private var headerViewModel = HeaderViewModel()` |
 | `YealinkMeetingPlannerApp.swift` | ✅ Phases 1,5 | `@State` ownership of `AppState` + `ConferenceViewModel` |
-| `WeatherView/WeatherViewModel.swift` | ✅ Phases 2-5 | `@Observable`; `DateFormatters`; `weatherIconName` dict |
-| `WeatherView/WeatherForecastView.swift` | ✅ Phases 2-5 | `@State` VM; `LayoutDimensions` |
+| `WeatherView/WeatherViewModel.swift` | ✅ Session 3 | `@Observable`; `fetchWeather`+`formatDate`; uses `WeatherCache`; icon mapping removed |
+| `WeatherView/WeatherForecastView.swift` | ✅ Session 3 | `@State` VM; `WeatherIconMapper.name(for:)`; `LayoutDimensions` |
+| `WeatherView/WeatherCache.swift` | ✅ NEW Session 3 | per-city UserDefaults cache (SRP) |
+| `WeatherView/WeatherIconMapper.swift` | ✅ NEW Session 3 | WMO → SF Symbol dict (OCP); replaces static `weatherIconName` |
 | `ScanSecretKey/ScanViewModel.swift` | ✅ Phases 3,5 | `@Observable`; `KeychainService` injected; no Combine |
 | `ScanSecretKey/ScannerView.swift` | ✅ Phase 5 | `@State` VM + `@Bindable` for text/sheet bindings |
 | `Helpers/DataStorage.swift` | ✅ Phases 3,5 | `DataStorage` protocol + `bool(forKey:)`; `UserDefaults` conforms |
@@ -190,11 +200,14 @@ The following issues were identified in a thorough review of all 46 Swift files 
 | `Model/WeatherModel.swift` | ✅ Fix Phase 4 | `longitude`/`elevation` `Int` → `Double` (Open-Meteo fractional coords) |
 | `ScanSecretKey/KeychainManager.swift` | ✅ Phase 3 | `KeychainService` protocol + conformance |
 | `LocalProperties/APIConfig.swift` | ✅ Session 2 | struct + `APICredentialsProviding` protocol; `KeychainService` injected; statics (incl. unused `baseUrl`) removed |
-| `NetworkLayers/YmsApiResponse.swift` | ✅ Session 2 | `let config: APICredentialsProviding`; instance `signedHeaders`/URL-builder |
-| `Settings/SettingsStore.swift` | ✅ Phases 3,5,demo | `KeychainService` + `DataStorage` injected; `isDemoEnabled` persisted |
+| `NetworkLayers/YmsApiResponse.swift` | ✅ Session 3 | thin `YmsApiService` facade: protocol + request bodies + facade over `YmsConferenceApi`/`YmsRoomApi` |
+| `NetworkLayers/YmsApiClient.swift` | ✅ NEW Session 3 | `YmsRequestSigner` + `YmsHTTPClient` + `YmsConferenceApi` + `YmsRoomApi` |
+| `Settings/SettingsStore.swift` | ✅ Session 3 | `PinManager` delegate; `selectedCity`/`isDemoEnabled` persisted |
+| `Settings/PinManager.swift` | ✅ NEW Session 3 | Keychain pin change/check (SRP) |
 | `Settings/SettingsView.swift` | ✅ demo | «Демо-данные» Toggle in new "Демонстрация" section |
 | `AppState.swift` | ✅ Phase 3 | `DataStorage` injected |
-| `ScheduleView/ScheduleView.swift` | ✅ Phases 3-4 | `ScheduleBlockTone.color` extension (OCP); uses `DateFormatters.ruFullDate` |
+| `ScheduleView/ScheduleView.swift` | ✅ Phases 3-4 + Session 3 | uses `DateFormatters.ruFullDate`; `color` extension moved out |
+| `ScheduleView/ScheduleBlockTone+Color.swift` | ✅ NEW Session 3 | `ScheduleBlockTone.color` extension (OCP) |
 | `ScheduleView/ScheduleSlotFormatter.swift` | ✅ Phases 3-4 | delegates `minutes(of:)` to `TimeUtils` |
 | `Model/ConferenceScheduler.swift` | ✅ Phase 4 | renamed from `ConferenceSheduler.swift`; type `ConferenceScheduler` |
 | `Model/CodeNDecode.swift` | ✅ Phase 4 | trimmed to `JSONNull` only (unused `JSONAny`/`JSONCodingKey` removed) |
@@ -206,9 +219,10 @@ The following issues were identified in a thorough review of all 46 Swift files 
 
 - The code review document (`code-review-yealink-meeting-planner.md`) has the full detailed analysis with line numbers
 - **All ViewModels are now `@Observable`** — no `ObservableObject`/`@Published`/`Combine` anywhere (verified by grep). `@MainActor @Observable final` is the standard for model-context VMs; `ScanViewModel` is plain `@Observable`
-- `ConferenceViewModel`/`HeaderViewModel` run a 60s `Timer` scheduled on the main run loop; the timer is stored as `@ObservationIgnored nonisolated(unsafe) private var` so `deinit` (nonisolated in @MainActor classes) can invalidate it. The block calls `MainActor.assumeIsolated { ... }` — keep this pattern if you touch these VMs
 - Owned VMs in views use `init(viewModel: X? = nil) { _viewModel = State(initialValue: viewModel ?? X()) }` — keep `??` creation in the init **body**; a default-arg `= X()` fails to compile for `@MainActor` VMs
-- `YmsApiResponse` reads credentials via injected `config: APICredentialsProviding` (default `APIConfig()`); `APIConfig` is now an instance, use `APIConfig()` / `APIConfig(keychain: fake)` — never `APIConfig.<static>` (removed)
+- `ConferenceScheduleStore`/`HeaderViewModel` run a 60s `Timer` scheduled on the main run loop; the timer is stored as `@ObservationIgnored nonisolated(unsafe) private var` so `deinit` (nonisolated in @MainActor classes) can invalidate it. The block calls `MainActor.assumeIsolated { ... }` — keep this pattern if you touch them
+- `ConferenceViewModel` forwards data state to `ConferenceScheduleStore` via computed props — Observation is transitive (body reads tracked `store.confDataItems`), so views still re-render on data change
+- `YmsApiResponse` is now a thin facade; networking lives in `YmsApiClient.swift` (`YmsRequestSigner`/`YmsHTTPClient`/`YmsConferenceApi`/`YmsRoomApi`). Credentials via injected `config: APICredentialsProviding` (default `APIConfig()`)
 - Build command: `xcodebuild -project YealinkMeetingPlanner.xcodeproj -scheme YealinkMeetingPlanner -destination 'platform=iOS Simulator,name=iPhone 17' build` — **passes now**
 - `scanRectSize: CGFloat = 260` is duplicated in `QRScannerViewController` and `QRScannerOverlayView` — must stay in sync (consider a shared constant later)
 - `ConferenceRoomScreen` previews return `AnyView` with `try? ModelContainer` — preserve this pattern in new previews

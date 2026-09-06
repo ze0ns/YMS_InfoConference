@@ -77,7 +77,7 @@ struct WeatherForecastView: View {
     private func currentWeatherView(data: WeatherData) -> some View {
         HStack {
             Spacer()
-            Image(systemName: WeatherViewModel.weatherIconName(for: data.current.weatherCode))
+            Image(systemName: WeatherIconMapper.name(for: data.current.weatherCode))
                 .resizable()
                 .scaledToFit()
                 .frame(width: LayoutDimensions.weatherCurrentIconSize, height: LayoutDimensions.weatherCurrentIconSize)
@@ -123,7 +123,7 @@ struct WeatherForecastView: View {
                         .frame(width: LayoutDimensions.weatherDailyDayWidth, alignment: .leading)
                         .foregroundColor(.white)
 
-                    Image(systemName: WeatherViewModel.weatherIconName(for: data.daily.weatherCode[idx]))
+                    Image(systemName: WeatherIconMapper.name(for: data.daily.weatherCode[idx]))
                         .symbolRenderingMode(.multicolor)
                         .font(.title)
 

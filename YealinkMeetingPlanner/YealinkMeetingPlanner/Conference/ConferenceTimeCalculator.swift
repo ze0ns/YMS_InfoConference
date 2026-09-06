@@ -7,14 +7,54 @@
 
 import Foundation
 
+/// Статус комнаты (свободна/занята) — модель, не несёт SwiftUI-кода.
+enum RoomStatus {
+    case free, occupied
+}
+
 // MARK: - Состояние карточки текущей встречи
 
-/// Готовое состояние карточки для отображения. View не принимает решения о логике.
+/// Готовое состояние карточки для отображения. View не принимает решения о логике
+/// и не применяет switch: все данные состояния предоставляются computed-свойствами (OCP).
 enum MeetingDisplayState {
     case noRoom
     case occupied(MeetingCardInfo)
     case free
     case noMeetings
+
+    /// Заголовок карточки для текущего состояния.
+    var title: String {
+        switch self {
+        case .noRoom: return "Выберите комнату"
+        case .occupied(let meeting): return meeting.title
+        case .free: return "Комната свободна"
+        case .noMeetings: return "Нет запланированных встреч"
+        }
+    }
+
+    /// Время встречи (пустое, если комната не занята).
+    var time: String {
+        if case .occupied(let meeting) = self { return meeting.time }
+        return ""
+    }
+
+    /// Имя контактного лица (пустое, если комната не занята).
+    var contactName: String {
+        if case .occupied(let meeting) = self { return meeting.contactName }
+        return ""
+    }
+
+    /// Телефон контактного лица (пустой, если комната не занята).
+    var contactPhone: String {
+        if case .occupied(let meeting) = self { return meeting.contactPhone }
+        return ""
+    }
+
+    /// Статус занятости комнаты.
+    var roomStatus: RoomStatus {
+        if case .occupied = self { return .occupied }
+        return .free
+    }
 }
 
 /// Отображаемые данные карточки занятой встречи.
