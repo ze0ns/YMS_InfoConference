@@ -1,13 +1,5 @@
-//
-//  PinEntryView.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 16.08.2026.
-//
 import SwiftUI
 
-/// Экран запроса пин-кода для доступа к настройкам.
-/// При успешном вводе вызывает onSuccess.
 struct PinEntryView: View {
     let onSuccess: () -> Void
 
@@ -27,7 +19,6 @@ struct PinEntryView: View {
             Text("Введите пин-код")
                 .font(.title2.bold())
 
-            // Индикатор введённых цифр
             HStack(spacing: 16) {
                 ForEach(0..<4, id: \.self) { index in
                     Circle()
@@ -43,7 +34,6 @@ struct PinEntryView: View {
                     .foregroundColor(.red)
             }
 
-            // Скрытое поле ввода
             TextField("", text: $enteredPin)
                 .keyboardType(.numberPad)
                 .textContentType(.oneTimeCode)
@@ -55,7 +45,6 @@ struct PinEntryView: View {
                     if filtered != newValue {
                         enteredPin = filtered
                     }
-                    // Проверяем автоматически, когда введено 4 цифры
                     if filtered.count == 4 {
                         verifyPin(filtered)
                     }

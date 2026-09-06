@@ -1,31 +1,17 @@
-//
-//  APIConfig.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 06.06.2026.
-//
-
 import Foundation
 import os
 
-// MARK: - Протокол конфигурации API (DIP: подменяется в тестах)
+// MARK: - Протокол конфигурации API
 
-/// Источник адреса сервера и ключей подписи запросов к YMS API.
 protocol APICredentialsProviding {
-    /// Базовый адрес сервера (без завершающего слэша).
     var hostURL: String { get }
-    /// Секретный ключ; приоритет у ключей из Keychain.
     var currentYlSecretKey: String { get }
-    /// Ключ доступа; приоритет у ключей из Keychain.
     var currentYlAccessKey: String { get }
-    /// Используются ли в данный момент ключи из Keychain.
     var usesKeychainKeys: Bool { get }
 }
 
-// MARK: - Реализация (Config.plist + Keychain)
+// MARK: - Реализация
 
-/// Конфигурация API: ключи и адрес читаются из Config.plist,
-/// но отсканированные пользователем ключи из Keychain имеют приоритет.
 struct APIConfig: APICredentialsProviding {
     private let keychain: KeychainService
 
@@ -44,12 +30,8 @@ struct APIConfig: APICredentialsProviding {
 
     var hostURL: String { Self.plist?["hostURL"] as? String ?? "" }
 
-    private var ylSecretKey: String { Self.plist?["ylSecretKey"] as? String ?? "" }
-    private var ylAccessKey: String { Self.plist?["ylAccessKey"] as? String ?? "" }
+    // MARK: - Keychain keys
 
-    // MARK: - Актуальные ключи: Keychain имеет приоритет над Config.plist
-
-    /// Ключи, отсканированные и сохранённые в Keychain (nil — если их там нет)
     private var keychainSecretKey: String? {
         keychain.load(key: ScanViewModel.secretKeychainKey)
     }
@@ -62,6 +44,6 @@ struct APIConfig: APICredentialsProviding {
         keychainSecretKey != nil && keychainAccessKey != nil
     }
 
-    var currentYlSecretKey: String { keychainSecretKey ?? ylSecretKey }
-    var currentYlAccessKey: String { keychainAccessKey ?? ylAccessKey }
+    var currentYlSecretKey: String { keychainSecretKey ?? "" }
+    var currentYlAccessKey: String { keychainAccessKey ?? "" }
 }

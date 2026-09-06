@@ -1,9 +1,3 @@
-//
-//  SelectRoomViewModel.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 16.08.2026.
-//
 import Foundation
 import Observation
 import os
@@ -25,8 +19,6 @@ final class SelectRoomViewModel {
         self.appState = appState
     }
 
-    /// Вызывается из View при появлении — repository и appState доступны
-    /// только через @Environment
     func configure(repository: RoomRepository, appState: AppState) {
         if self.repository == nil {
             self.repository = repository
@@ -46,7 +38,6 @@ final class SelectRoomViewModel {
 
     // MARK: - Загрузка и сохранение комнат
 
-    /// Загружает комнаты из API, обновляет базу данных и отображаемый список.
     func fetchAndSaveRooms() async {
         guard let repository, let appState else {
             errorMessage = "Хранилище и состояние приложения не настроены"
@@ -56,16 +47,12 @@ final class SelectRoomViewModel {
         errorMessage = nil
 
         do {
-            // 1. Получаем данные из API
             let response = try await api.getRooms()
 
-            // 2. Заменяем записи в базе данными из API
             try repository.replaceAll(with: response.data.data)
 
-            // 3. Обновляем список из базы
             rooms = try repository.loadRooms()
 
-            // 4. Если выбранная комната удалена из API — сбрасываем выбор
             if let currentSelected = appState.selectedRoom,
                !rooms.contains(where: { $0.id == currentSelected.id }) {
                 appState.selectedRoom = nil

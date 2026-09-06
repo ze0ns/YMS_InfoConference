@@ -1,17 +1,9 @@
-//
-//  YmsApiClient.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 06.09.2026.
-//
-
 import Foundation
 import CryptoKit
 import os
 
 // MARK: - Подпись запроса (HMAC-SHA256)
 
-/// Строит заголовки подписи для запроса к YMS API (выделено из `YmsApiResponse` — SRP).
 struct YmsRequestSigner {
     private let config: APICredentialsProviding
 
@@ -19,11 +11,6 @@ struct YmsRequestSigner {
         self.config = config
     }
 
-    /// Строит заголовки HMAC-подписи для запроса.
-    /// - Parameters:
-    ///   - method: HTTP-метод (например, "POST").
-    ///   - path: путь запроса (без хоста).
-    ///   - bodyData: сериализованное тело запроса; `nil`, если тела нет.
     func headers(method: String, path: String, bodyData: Data?) -> [String: String] {
         let accessKey = config.currentYlAccessKey
         let secretKey = config.currentYlSecretKey
@@ -59,7 +46,6 @@ struct YmsRequestSigner {
 
 // MARK: - HTTP-клиент
 
-/// Единственная точка POST-запросов к YMS API с подписью.
 struct YmsHTTPClient {
     private let config: APICredentialsProviding
     private let signer: YmsRequestSigner
@@ -69,15 +55,15 @@ struct YmsHTTPClient {
         self.signer = YmsRequestSigner(config: config)
     }
 
-    /// POST-запрос к YMS API с подписью и декодированием ответа.
-    /// - Parameters:
-    ///   - path: путь запроса (без хоста).
-    ///   - body: сериализуемое тело запроса.
-    /// - Returns: декодированный ответ типа `Response`.
     func post<Body: Encodable, Response: Decodable>(
         path: String,
         body: Body
     ) async throws -> Response {
+        guard !config.hostURL.isEmpty, config.usesKeychainKeys else {
+            AppLog.network.error("Конфигурация API не задана: отсутствуют ключи или hostURL")
+            throw NetError.missingConfiguration
+        }
+
         let bodyData = try JSONEncoder().encode(body)
 
         let base = config.hostURL
@@ -112,7 +98,6 @@ struct YmsHTTPClient {
 
 // MARK: - Конференции
 
-/// API расписания конференций.
 struct YmsConferenceApi {
     private let client: YmsHTTPClient
 
@@ -120,7 +105,6 @@ struct YmsConferenceApi {
         self.client = YmsHTTPClient(config: config)
     }
 
-    /// Расписание конференций указанной комнаты.
     func getConferenceSchedule(roomId: String) async throws -> ConferenceScheduler {
         try await client.post(
             path: "api/open/v1/conference/record/\(roomId)/pagedList",
@@ -131,7 +115,6 @@ struct YmsConferenceApi {
 
 // MARK: - Комнаты
 
-/// API списка комнат.
 struct YmsRoomApi {
     private let client: YmsHTTPClient
 
@@ -139,7 +122,6 @@ struct YmsRoomApi {
         self.client = YmsHTTPClient(config: config)
     }
 
-    /// Список доступных комнат.
     func getRooms() async throws -> RoomList {
         try await client.post(path: "api/open/v1/room/pagedList", body: RoomListRequest())
     }

@@ -1,15 +1,7 @@
-//
-//  CodeNDecode.swift
-//  yealinkCalc
-//
-//  Created by Oschepkov Aleksandr on 04.03.2024.
-//
-
 import Foundation
 
 // MARK: - Encode/decode helpers
 
-/// Представляет null-значение в DTO, сгенерированных quicktype.
 class JSONNull: Codable, Hashable {
 
     static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {

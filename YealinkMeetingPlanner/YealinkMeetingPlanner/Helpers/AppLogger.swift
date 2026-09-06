@@ -1,8 +1,3 @@
-//
-//  AppLogger.swift
-//  YealinkMeetingPlanner
-//
-
 import os
 import Foundation
 

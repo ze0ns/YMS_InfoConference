@@ -1,11 +1,3 @@
-//
-//  TextScannerView.swift
-//  scantext
-//
-//  Created by Oschepkov Aleksandr on 27.06.2026.
-//
-//
-//
 import SwiftUI
 import AVFoundation
 

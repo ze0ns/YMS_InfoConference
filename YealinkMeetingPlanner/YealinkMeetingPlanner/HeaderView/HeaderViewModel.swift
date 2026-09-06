@@ -1,9 +1,3 @@
-//
-//  HeaderViewModel.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 29.05.2026.
-//
 import SwiftUI
 
 @MainActor
@@ -28,12 +22,10 @@ final class HeaderViewModel {
         refreshTimer?.invalidate()
     }
 
-    /// Полная дата: "5 сентября 2026"
     func dateString(from date: Date) -> String {
         DateFormatters.ruFullDate.string(from: date)
     }
 
-    /// Время: "14:30"
     func timeString(from date: Date) -> String {
         DateFormatters.timeHM.string(from: date)
     }

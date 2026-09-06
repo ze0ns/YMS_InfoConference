@@ -1,23 +1,12 @@
-//
-//  ConferenceDatabaseService.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 05.09.2026.
-//
-
 import SwiftData
 import Foundation
 
-// MARK: - Протокол репозитория расписания (DIP: вместо прямого ModelContext)
+// MARK: - Протокол репозитория расписания
 
-/// Репозиторий расписания конференций (DIP: ViewModel не работает с ModelContext напрямую).
 @MainActor
 protocol ConferenceRepository {
-    /// Загружает все конференции, отсортированные по времени начала.
     func loadConferences() throws -> [ConfDataModel]
-    /// Заменяет всё содержимое расписанием из API.
     func replaceAll(with schedule: ConferenceScheduler) throws
-    /// Очищает кэш расписания.
     func clearAll() throws
 }
 
@@ -63,16 +52,12 @@ final class SwiftDataConferenceRepository: ConferenceRepository {
     }
 }
 
-// MARK: - Протокол репозитория комнат (DIP: вместо прямого ModelContext)
+// MARK: - Протокол репозитория комнат
 
-/// Репозиторий комнат (DIP: ViewModel не работает с ModelContext напрямую).
 @MainActor
 protocol RoomRepository {
-    /// Загружает все комнаты, отсортированные по имени.
     func loadRooms() throws -> [RoomModel]
-    /// Заменяет всё содержимое списком комнат из API.
     func replaceAll(with rooms: [DatumRoom]) throws
-    /// Очищает кэш комнат.
     func clearAll() throws
 }
 

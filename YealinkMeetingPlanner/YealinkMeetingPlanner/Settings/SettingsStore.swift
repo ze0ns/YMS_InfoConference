@@ -1,9 +1,3 @@
-//
-//  SettingsStore.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 16.08.2026.
-//
 import Foundation
 import Observation
 
@@ -15,7 +9,6 @@ struct City: Identifiable, Equatable {
     let longitude: Double
 }
 
-// Список доступных городов
 enum CityCatalog {
     static let cities: [City] = [
         City(id: "krasnodar", name: "Краснодар", latitude: 45.0328, longitude: 38.9769),
@@ -38,12 +31,10 @@ class SettingsStore {
     private let storage: DataStorage
     private let pinManager: PinManager
 
-    /// Выбранный город
     var selectedCity: City {
         didSet { storage.set(selectedCity.id, forKey: Self.cityDefaultsKey) }
     }
 
-    /// Демо-режим: вместо реального API показывается синтетическое расписание
     var isDemoEnabled: Bool {
         didSet { storage.set(isDemoEnabled, forKey: Self.demoEnabledKey) }
     }
@@ -59,13 +50,11 @@ class SettingsStore {
         isDemoEnabled = self.storage.bool(forKey: Self.demoEnabledKey)
     }
 
-    /// Смена пин-кода: делегируется `PinManager`
     @discardableResult
     func changePin(to newPin: String) -> Bool {
         pinManager.changePin(to: newPin)
     }
 
-    /// Проверка пин-кода: делегируется `PinManager`
     func checkPin(_ entered: String) -> Bool {
         pinManager.checkPin(entered)
     }

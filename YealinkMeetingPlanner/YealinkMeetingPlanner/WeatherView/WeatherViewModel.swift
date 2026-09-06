@@ -1,10 +1,3 @@
-//
-//  WeatherViewModel.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 04.06.2026.
-//
-
 import Foundation
 import Observation
 import os
@@ -26,12 +19,9 @@ final class WeatherViewModel {
         self.cache = WeatherCache(storage: storage ?? UserDefaults.standard)
     }
 
-    /// Загружает погоду для выбранного в настройках города.
-    /// View не знает ни про город, ни про координаты.
     func fetchWeather() async {
         let city = settings.selectedCity
 
-        // Кэш текущего города актуален — не ходим в сеть
         if cache.isCacheValid(cityId: city.id) {
             weatherData = cache.load(cityId: city.id)
             return
@@ -45,7 +35,6 @@ final class WeatherViewModel {
             weatherData = data
             cache.save(data, cityId: city.id)
         } catch {
-            // Ошибка показывается только если нет данных вообще — иначе остаётся прежний прогноз
             if weatherData == nil {
                 errorMessage = error.localizedDescription
             }
@@ -55,9 +44,8 @@ final class WeatherViewModel {
         isLoading = false
     }
 
-    // MARK: - Форматирование дат прогноза
+    // MARK: - Date formatting
 
-    /// "2026-09-05" → "сб, 5 сент"
     func formatDate(_ dateString: String) -> String {
         if let date = DateFormatters.isoDate.date(from: dateString) {
             return DateFormatters.shortWeekdayDay.string(from: date)

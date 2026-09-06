@@ -1,9 +1,3 @@
-//
-//  HeaderView.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 28.05.2026.
-//
 import SwiftUI
 
 struct HeaderView: View {

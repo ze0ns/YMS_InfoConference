@@ -1,13 +1,6 @@
-//
-//  ConferenceRoomScreen.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 28.05.2026.
-//
 import SwiftUI
 import SwiftData
 
-/// In-memory хранилище для Preview и тестов (ничего не пишет в UserDefaults).
 final class MockStorage: DataStorage {
     private var store: [String: Any] = [:]
 

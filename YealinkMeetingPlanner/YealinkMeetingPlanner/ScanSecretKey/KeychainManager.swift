@@ -1,34 +1,20 @@
-//
-//  KeychainManager.swift
-//  scantext
-//
-//  Created by Oschepkov Aleksandr on 27.06.2026.
-//
-
-
 import Foundation
 import Security
 
-/// Хранилище секретов (DIP: потребители зависят от абстракции).
 protocol KeychainService {
-    /// Сохраняет значение по ключу; возвращает true при успехе.
     @discardableResult
     func save(key: String, value: String) -> Bool
-    /// Читает значение по ключу.
     func load(key: String) -> String?
-    /// Удаляет значение по ключу.
     func delete(key: String)
 }
 
 class KeychainManager: KeychainService {
     static let shared = KeychainManager()
 
-    // Сохранение секретных данных
     @discardableResult
     func save(key: String, value: String) -> Bool {
         guard let data = value.data(using: .utf8) else { return false }
         
-        // Удаляем старое значение, если оно есть
         delete(key: key)
         
         let query: [String: Any] = [
@@ -42,7 +28,6 @@ class KeychainManager: KeychainService {
         return status == errSecSuccess
     }
     
-    // Чтение секретных данных
     func load(key: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

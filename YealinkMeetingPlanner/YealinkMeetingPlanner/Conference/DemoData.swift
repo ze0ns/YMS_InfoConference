@@ -1,18 +1,8 @@
-//
-//  DemoData.swift
-//  YealinkMeetingPlanner
-//
-//  Created by Oschepkov Aleksandr on 05.09.2026.
-//
-
 import Foundation
 import SwiftData
 
-// MARK: - Демо-расписание (чистая логика, без сетевых запросов)
+// MARK: - Демо-расписание
 
-/// Генерирует синтетическое расписание на день: первая встреча в 07:00,
-/// затем 90-мин встречи с 30-мин перерывами до 20:00; текущий момент
-/// гарантированно приходится на встречу (нужно Preview и демо, когда сервер недоступен).
 enum DemoData {
 
     private static let dayStart = 7 * 60    // 07:00
@@ -48,7 +38,6 @@ enum DemoData {
         let endMinutes: Int
     }
 
-    /// Расписание на день с «текущей» встречей в момент `now`.
     static func conferences(now: Date = Date(), calendar: Calendar = .current) -> [ConfDataModel] {
         let currentMinutes = calendar.component(.hour, from: now) * 60
             + calendar.component(.minute, from: now)
@@ -59,14 +48,12 @@ enum DemoData {
 
         var meetings: [Meeting] = []
         var index = 0
-        // Первая встреча в 07:00, далее встык до текущей встречи
         var time = dayStart
         while time + meetingDuration <= currentStart {
             meetings.append(makeMeeting(start: time, end: time + meetingDuration, index: &index))
             time += meetingDuration
         }
 
-        // Текущая встреча — комната занята «прямо сейчас»
         meetings.append(Meeting(
             title: "Обсуждение текущих задач",
             organizer: "Организатор Демо",
@@ -75,7 +62,6 @@ enum DemoData {
             endMinutes: currentEnd
         ))
 
-        // День: заполняем пробелы от конца текущей встречи до конца дня
         time = currentEnd
         while time + meetingDuration <= dayEnd {
             meetings.append(makeMeeting(start: time, end: time + meetingDuration, index: &index))
